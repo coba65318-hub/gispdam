@@ -1,2 +1,0 @@
-# gispdam
-gis untuk belajar
