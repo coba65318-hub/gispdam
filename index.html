@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <!-- Leaflet Draw CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <!-- MarkerCluster CSS (Wajib untuk data besar) -->
+    <!-- MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome -->
@@ -156,6 +156,13 @@
         }
         #searchCustomer:focus { border-color: var(--accent-color); background: white; }
 
+        /* URL Input */
+        #urlInput {
+            width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; 
+            border-radius: 6px; font-size: 0.85rem; font-family: monospace; color: #555;
+        }
+        #urlInput:focus { border-color: var(--accent-color); outline: none; }
+
         /* Toast */
         #toast { 
             visibility: hidden; min-width: 280px; background-color: #2c3e50; color: #fff; 
@@ -211,46 +218,55 @@
 
             <!-- Tab 1: Tools -->
             <div id="tools" class="sidebar-content">
+                <!-- Bagian Baru: Import Folder -->
                 <div class="control-group">
-                    <h3>Navigasi & GPS</h3>
-                    <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px; line-height: 1.4;">
-                        Tentukan posisi Anda untuk menghitung rute terpendek ke pelanggan.
+                    <h3>Import Banyak File (Folder)</h3>
+                    <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">
+                        Pilih folder berisi banyak CSV/KML sekaligus.
                     </p>
-                    <button class="btn btn-info" onclick="locateUser()">
-                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
-                    </button>
-                    <div id="gpsStatus" style="font-size: 0.75rem; color: #7f8c8d; margin-top: 5px; display:none;">
-                        <i class="fas fa-circle-notch fa-spin"></i> Mencari sinyal GPS...
+                    <div class="file-input-wrapper btn btn-primary">
+                        <i class="fas fa-folder-open"></i> Import Folder (CSV/KML)
+                        <!-- webkitdirectory memungkinkan pemilihan folder -->
+                        <input type="file" id="folderInput" webkitdirectory directory multiple>
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <h3>Manajemen Data Pelanggan</h3>
+                    <h3>Load Data Otomatis (URL)</h3>
+                    <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">Link "Publish to Web" (G-Drive) atau URL file publik.</p>
+                    <input type="text" id="urlInput" placeholder="https://...">
+                    <button class="btn btn-info" onclick="loadDataFromUrl()">
+                        <i class="fas fa-cloud-download-alt"></i> Muat dari URL
+                    </button>
+                </div>
+
+                <div class="control-group">
+                    <h3>Import File Satu-satu</h3>
                     <div class="file-input-wrapper btn btn-warning">
-                        <i class="fas fa-file-csv"></i> Import CSV Pelanggan
+                        <i class="fas fa-file-csv"></i> Import CSV (Single)
                         <input type="file" id="csvInput" accept=".csv">
                     </div>
-                    <!-- Tombol Ekspor -->
-                    <button class="btn btn-success" onclick="exportCustomerCSV()">
-                        <i class="fas fa-file-export"></i> Ekspor CSV Pelanggan
-                    </button>
-                    <p style="font-size:0.7rem; color:#999; margin-top:5px;">Data akan ditambahkan (akumulatif).</p>
-                </div>
-
-                <div class="control-group">
-                    <h3>Import Peta Tambahan</h3>
                     <div class="file-input-wrapper btn btn-primary">
-                        <i class="fas fa-map-marked"></i> Import Peta (GeoJSON/KML)
+                        <i class="fas fa-map-marked"></i> Import Peta (Single)
                         <input type="file" id="geojsonInput" accept=".geojson,.json,.kml">
                     </div>
                 </div>
 
                 <div class="control-group">
-                    <h3>Ekspor Gambar</h3>
+                    <h3>Ekspor Data</h3>
+                    <button class="btn btn-success" onclick="exportCustomerCSV()">
+                        <i class="fas fa-file-export"></i> Ekspor CSV Pelanggan
+                    </button>
                     <button class="btn btn-info" onclick="exportGeoJSON()">
                         <i class="fas fa-download"></i> Unduh Gambar (GeoJSON)
                     </button>
-                    <p style="font-size:0.7rem; color:#999; margin-top:5px;">Mengunduh hasil gambar poligon/garis Anda.</p>
+                </div>
+
+                <div class="control-group">
+                    <h3>Navigasi</h3>
+                    <button class="btn btn-info" onclick="locateUser()">
+                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
+                    </button>
                 </div>
             </div>
 
@@ -279,7 +295,7 @@
                     <div id="customerListContainer" style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">
                         <div style="text-align:center; padding: 30px; color:#bdc3c7;">
                             <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p style="font-size:0.85rem;">Belum ada data.<br>Import CSV untuk memulai.</p>
+                            <p style="font-size:0.85rem;">Belum ada data.<br>Import Folder atau File.</p>
                         </div>
                     </div>
                 </div>
@@ -320,7 +336,6 @@
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
-    <!-- MarkerCluster JS (Wajib untuk Optimasi) -->
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <script>
@@ -333,16 +348,12 @@
 
         L.control.layers({ "Peta Jalan": osmLayer, "Satelit": satelliteLayer }).addTo(map);
 
-        // Feature Groups
         const drawnItems = new L.FeatureGroup();
-        
-        // OPTIMASI: Menggunakan MarkerClusterGroup untuk data besar
         const customerLayer = L.markerClusterGroup({
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
             maxClusterRadius: 50
         });
-        
         const routeLayer = new L.LayerGroup(); 
         const userLocationLayer = new L.LayerGroup();
         
@@ -351,17 +362,134 @@
         map.addLayer(routeLayer);
         map.addLayer(userLocationLayer);
 
-        // Cache array untuk menyimpan data pelanggan (Akumulatif)
         let customersCache = []; 
+        let currentUserLatLng = null;
 
-        // --- 2. Alat Gambar ---
+        // --- 2. Logic Import Folder (Banyak File) ---
+        document.getElementById('folderInput').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            // Filter hanya file yang didukung
+            const validFiles = files.filter(f => {
+                const ext = f.name.split('.').pop().toLowerCase();
+                return ['csv', 'kml', 'geojson', 'json'].includes(ext);
+            });
+
+            if (validFiles.length === 0) {
+                showToast("Tidak ada file CSV/KML/JSON di folder tersebut.");
+                return;
+            }
+
+            showToast(`Memproses ${validFiles.length} file...`);
+            let processedCount = 0;
+
+            // Loop satu per satu agar tidak hang browser
+            for (const file of validFiles) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                if (ext === 'csv') {
+                    // Proses CSV
+                    await new Promise((resolve) => {
+                        Papa.parse(file, {
+                            header: true,
+                            skipEmptyLines: true,
+                            complete: (results) => {
+                                if (results.data) processCustomerDataOptimized(results.data);
+                                resolve();
+                            },
+                            error: () => resolve() // Lanjut meski error file satu
+                        });
+                    });
+                } else if (['kml', 'geojson', 'json'].includes(ext)) {
+                    // Proses Peta
+                    await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            processGeoContent(evt.target.result, ext === 'kml' ? 'kml' : 'geojson');
+                            resolve();
+                        };
+                        reader.onerror = () => resolve();
+                        reader.readAsText(file);
+                    });
+                }
+                processedCount++;
+            }
+
+            // Reset input agar bisa pilih folder yang sama lagi kalau perlu
+            e.target.value = '';
+            
+            // Update tampilan peta di akhir proses
+            if(customerLayer.getLayers().length > 0 || drawnItems.getLayers().length > 0) {
+                const group = new L.FeatureGroup([customerLayer, drawnItems]);
+                map.fitBounds(group.getBounds(), { padding: [50, 50] });
+            }
+
+            showToast(`Selesai! ${processedCount} file diproses.`);
+        });
+
+        // --- 3. Logic Load dari URL ---
+        async function loadDataFromUrl(urlInput) {
+            const url = urlInput || document.getElementById('urlInput').value.trim();
+            if (!url) return showToast("URL kosong.");
+            showToast("Sedang mengambil data...");
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Gagal mengambil data.");
+                const text = await response.text();
+                const isCSV = url.includes('csv') || url.includes('spreadsheets');
+                const isKML = url.includes('kml');
+                
+                if (isCSV) {
+                    const results = Papa.parse(text, { header: true, skipEmptyLines: true });
+                    if (results.data) processCustomerDataOptimized(results.data);
+                    showToast("CSV dimuat dari URL.");
+                } else if (isKML || url.includes('geojson')) {
+                    processGeoContent(text, isKML ? 'kml' : 'geojson');
+                    showToast("Peta dimuat dari URL.");
+                }
+            } catch (error) {
+                showToast("Error: Cek koneksi atau izin akses (CORS).");
+            }
+        }
+
+        // --- 4. Logic GeoJSON & Processing ---
+        function processGeoContent(content, type) {
+            try {
+                let geojson;
+                if (type === 'kml') {
+                    const parser = new DOMParser();
+                    const kml = parser.parseFromString(content, "text/xml");
+                    if (kml.getElementsByTagName("parsererror").length > 0) throw new Error("KML Error");
+                    geojson = toGeoJSON.kml(kml);
+                } else {
+                    geojson = JSON.parse(content);
+                }
+                
+                const layer = L.geoJSON(geojson, {
+                    onEachFeature: function(f, l) {
+                        let layerType = 'unknown';
+                        if(l instanceof L.Marker) layerType = 'marker';
+                        else if(l instanceof L.Polygon) layerType = 'polygon';
+                        else if(l instanceof L.Polyline) layerType = 'polyline';
+                        if(layerType !== 'unknown') calculateGeometry(l, layerType);
+                        l.feature = l.feature || {};
+                        l.feature.properties = l.feature.properties || {};
+                        l.feature.properties.type = layerType;
+                        drawnItems.addLayer(l);
+                    }
+                });
+                updateDrawStats();
+            } catch(e) { console.error(e); }
+        }
+
+        // --- 5. Alat Gambar ---
         const drawControl = new L.Control.Draw({
             draw: {
                 polyline: { shapeOptions: { color: '#3498db' } },
                 polygon: { shapeOptions: { color: '#3498db' }, allowIntersection: false },
                 rectangle: { shapeOptions: { color: '#3498db' } },
-                circle: false,
-                circlemarker: false,
+                circle: false, circlemarker: false,
                 marker: { icon: L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#e74c3c; width:10px; height:10px; border-radius:50%; border:2px solid white;'></div>", iconSize: [12,12], iconAnchor: [6,6] }) }
             },
             edit: { featureGroup: drawnItems, remove: true }
@@ -376,105 +504,39 @@
             calculateGeometry(layer, e.layerType);
             drawnItems.addLayer(layer);
             updateDrawStats();
-            showToast("Objek ditambahkan ke peta.");
+            showToast("Objek ditambahkan.");
         });
-
         map.on(L.Draw.Event.EDITED, updateDrawStats);
         map.on(L.Draw.Event.DELETED, updateDrawStats);
 
-        // --- 3. Navigasi & GPS ---
-        let currentUserLatLng = null;
-
-        function locateUser() {
-            if (!navigator.geolocation) return showToast("Browser tidak support Geolocation.");
-            showToast("Mencari lokasi...");
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    currentUserLatLng = L.latLng(lat, lng);
-                    userLocationLayer.clearLayers();
-                    
-                    const userMarker = L.circleMarker([lat, lng], {
-                        radius: 8, fillColor: "#2980b9", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
-                    }).addTo(userLocationLayer);
-                    userMarker.bindPopup("<b>Lokasi Anda</b>").openPopup();
-                    map.flyTo([lat, lng], 15);
-                    showToast("Lokasi ditemukan!");
-                },
-                () => showToast("Gagal mendapatkan lokasi.")
-            );
-        }
-
-        async function getRoute(startLatLng, endLatLng, destName) {
-            if (!startLatLng) { alert("Cari lokasi Anda dulu (GPS)."); locateUser(); return; }
-            const startStr = `${startLatLng.lng},${startLatLng.lat}`;
-            const endStr = `${endLatLng.lng},${endLatLng.lat}`;
-            
-            showToast("Menghitung rute...");
-            try {
-                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${startStr};${endStr}?overview=full&geometries=geojson`);
-                const data = await response.json();
-                if (data.code !== 'Ok') throw new Error("Rute tidak ditemukan.");
-
-                const route = data.routes[0];
-                routeLayer.clearLayers();
-                
-                L.geoJSON(route.geometry, {
-                    style: { color: 'var(--route-color)', weight: 6, opacity: 0.8 }
-                }).addTo(routeLayer);
-
-                const bounds = L.latLngBounds(route.geometry.coordinates.map(c => [c[1], c[0]]));
-                map.fitBounds(bounds, { padding: [50, 50] });
-                
-                const distanceKm = (route.distance / 1000).toFixed(1);
-                const durationMin = Math.round(route.duration / 60);
-                document.getElementById('routeStatus').textContent = `${distanceKm} km`;
-                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#2980b9';
-                showToast(`Jarak: ${distanceKm} km (${durationMin} menit)`);
-            } catch (err) {
-                showToast("Gagal hitung rute.");
-            }
-        }
-
-        function openGoogleMaps(lat, lng) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-        }
-
-        // --- 4. CSV Logic (Akumulatif - Tidak Menghapus Data Lama) ---
+        // --- 6. CSV Logic (Akumulatif) ---
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
-            const container = document.getElementById('customerListContainer');
-            container.innerHTML = '<div style="text-align:center; padding:20px;">Sedang memproses data...<br><i class="fas fa-spinner fa-spin"></i></div>';
-
             Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                worker: true,
+                header: true, skipEmptyLines: true, worker: true,
                 complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        processCustomerDataOptimized(results.data);
-                    } else {
-                        showToast("File CSV kosong.");
-                    }
+                    if (results.data) processCustomerDataOptimized(results.data);
                     e.target.value = '';
-                },
-                error: function(err) { showToast("Error: " + err.message); }
+                }
             });
         });
 
-        function processCustomerDataOptimized(data) {
-            let count = 0;
-            
-            // PERUBAHAN: Tidak lagi menghapus data lama
-            // customerLayer.clearLayers(); 
-            // customersCache = []; 
-            
-            // Gunakan bounds layer saat ini agar view tidak hilang, atau buat bounds baru untuk file ini
-            const newBounds = L.latLngBounds(); 
+        document.getElementById('geojsonInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const isKml = file.name.toLowerCase().endsWith('.kml');
+                processGeoContent(evt.target.result, isKml ? 'kml' : 'geojson');
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
 
+        function processCustomerDataOptimized(data) {
+            if(data.length === 0) return;
+            let count = 0;
             const firstRow = data[0];
             let latKey = null, lngKey = null;
             for (let key of Object.keys(firstRow)) {
@@ -483,34 +545,24 @@
                 if (!lngKey && (k.includes('lng') || k.includes('long') || k.includes('x') || k.includes('bujur'))) lngKey = key;
             }
 
-            if (!latKey || !lngKey) {
-                alert("Kolom Latitude/Longitude tidak ditemukan.");
-                // Jangan hapus loading message jika gagal, biarkan user tahu error
-                document.getElementById('customerListContainer').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Error: Kolom Lat/Lng tidak ditemukan.</div>';
-                return;
-            }
+            if (!latKey || !lngKey) return; // Silent fail for mixed files
 
             data.forEach(row => {
                 const lat = parseFloat(row[latKey]);
                 const lng = parseFloat(row[lngKey]);
-
                 if (!isNaN(lat) && !isNaN(lng)) {
                     const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nama') || k.toLowerCase().includes('name')) || 'Pelanggan';
                     const name = row[nameKey] || 'Tanpa Nama';
 
-                    // 1. Marker Ringan
                     const marker = L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'custom-div-icon',
                             html: `<div style="background-color:#e67e22; width:8px; height:8px; border-radius:50%; border:1px solid white;"></div>`,
-                            iconSize: [8, 8],
-                            iconAnchor: [4, 4]
+                            iconSize: [8, 8], iconAnchor: [4, 4]
                         })
                     });
 
-                    marker.custData = row;
-                    marker.custName = name;
-                    
+                    marker.custData = row; marker.custName = name;
                     marker.on('click', function() {
                         let popupContent = `<b>${name}</b><br>`;
                         for (const [key, value] of Object.entries(row)) {
@@ -520,89 +572,55 @@
                     });
 
                     customerLayer.addLayer(marker);
-                    newBounds.extend([lat, lng]);
                     
-                    // 2. Simpan ke cache (Append/Push ke belakang)
                     let address = '';
                     for(const [k,v] of Object.entries(row)) {
                         if(k.toLowerCase().includes('alamat') || k.toLowerCase().includes('address')) { address = v; break; }
                     }
 
                     customersCache.push({
-                        name: name,
-                        address: address || lat.toFixed(4)+','+lng.toFixed(4),
-                        lat: lat,
-                        lng: lng,
-                        layer: marker,
-                        raw: row 
+                        name: name, address: address || lat.toFixed(4)+','+lng.toFixed(4),
+                        lat: lat, lng: lng, layer: marker, raw: row 
                     });
-
                     count++;
                 }
             });
 
             if (count > 0) {
-                // Zoom agar mencakup SEMUA data (lama + baru)
-                if(customerLayer.getLayers().length > 0) {
-                    map.fitBounds(customerLayer.getBounds(), { padding: [50, 50] });
-                }
-                
                 updateCustomerListOptimized();
-                // Pesan notifikasi menunjukkan penambahan
-                showToast(`${count} pelanggan ditambahkan. Total: ${customersCache.length}`);
-            } else {
-                showToast("Tidak ada data koordinat valid yang ditambahkan.");
+                // Jangan fitBounds disini agar tidak pusing saat load banyak file, dihandle di loop folder
             }
         }
 
-        // --- 4b. Fitur Ekspor CSV (Otomatis Mencakup Semua Data) ---
+        // --- 7. Fitur Ekspor & Lainnya ---
         function exportCustomerCSV() {
-            if (customersCache.length === 0) {
-                showToast("Tidak ada data pelanggan untuk diekspor.");
-                return;
-            }
-
-            // Karena customersCache bersifat akumulatif, export ini akan otomatis
-            // menggabungkan semua file yang pernah di-import.
-            const dataToExport = customersCache.map(c => c.raw);
-
-            const csv = Papa.unparse(dataToExport);
-
+            if (customersCache.length === 0) return showToast("Tidak ada data.");
+            const csv = Papa.unparse(customersCache.map(c => c.raw));
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            const date = new Date().toISOString().slice(0,10);
-            link.setAttribute("download", `ekspor_semua_pelanggan_${date}.csv`);
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showToast("Semua data pelanggan berhasil diekspor!");
+            link.href = URL.createObjectURL(blob);
+            link.download = `data_semua_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showToast("Data diekspor.");
         }
 
-        // --- 5. Optimasi Sidebar (Pagination) ---
+        function exportGeoJSON() {
+            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada gambar.");
+            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
+            const a = document.createElement('a');
+            a.href = data; a.download = `peta_${Date.now()}.geojson`;
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+
         function updateCustomerListOptimized() {
             const container = document.getElementById('customerListContainer');
             const stats = document.getElementById('custTotal');
             container.innerHTML = '';
-            
-            const total = customersCache.length;
-            stats.innerHTML = `<b>${total}</b>`;
+            stats.innerHTML = `<b>${customersCache.length}</b>`;
 
-            // Render hanya 50 item pertama (atau terakhir, tergantung preferensi, di sini kita pakai pertama agar konsisten)
-            // Jika ingin menampilkan data terbaru di atas, bisa menggunakan slice().reverse()
             const displayLimit = 50;
-            const dataToShow = customersCache.slice(0, displayLimit);
-
-            if (total === 0) {
-                container.innerHTML = '<p style="color:#999; text-align:center; padding: 20px;">Data kosong.</p>';
-                return;
-            }
-
             const fragment = document.createDocumentFragment();
-            dataToShow.forEach(c => {
+            customersCache.slice(0, displayLimit).forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'customer-list-item';
                 item.innerHTML = `
@@ -613,196 +631,113 @@
                         <button class="nav-btn btn-gmaps" onclick="event.stopPropagation(); openGoogleMaps(${c.lat}, ${c.lng})"><i class="fab fa-google"></i> Maps</button>
                     </div>
                 `;
-                item.onclick = function() {
-                    map.flyTo([c.lat, c.lng], 18);
-                    c.layer.openPopup();
-                };
+                item.onclick = () => { map.flyTo([c.lat, c.lng], 18); c.layer.openPopup(); };
                 fragment.appendChild(item);
             });
             container.appendChild(fragment);
-
-            if (total > displayLimit) {
+            
+            if (customersCache.length > displayLimit) {
                 const info = document.createElement('div');
-                info.style.padding = "10px";
-                info.style.textAlign = "center";
-                info.style.color = "#777";
-                info.style.fontSize = "0.8rem";
-                info.innerHTML = `... dan ${total - displayLimit} data lainnya.<br>Gunakan kolom pencarian di atas.`;
+                info.style.cssText = "padding:10px; text-align:center; color:#777; font-size:0.8rem";
+                info.innerHTML = `... dan ${customersCache.length - displayLimit} data lainnya.`;
                 container.appendChild(info);
             }
         }
 
         function filterCustomers() {
-            const input = document.getElementById("searchCustomer");
-            const filter = input.value.toUpperCase();
+            const filter = document.getElementById("searchCustomer").value.toUpperCase();
             const container = document.getElementById('customerListContainer');
             container.innerHTML = '';
-
-            // Filter dari cache array
-            const filtered = customersCache.filter(c => 
-                c.name.toUpperCase().includes(filter) || 
-                c.address.toUpperCase().includes(filter)
-            );
-
-            const displayLimit = 50; 
-            const resultsToShow = filtered.slice(0, displayLimit);
-
-            if (resultsToShow.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:#999">Data tidak ditemukan.</p>';
-                return;
-            }
+            const filtered = customersCache.filter(c => c.name.toUpperCase().includes(filter) || c.address.toUpperCase().includes(filter));
+            
+            if(filtered.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#999">Data tidak ditemukan.</p>'; return; }
 
             const fragment = document.createDocumentFragment();
-            resultsToShow.forEach(c => {
+            filtered.slice(0, 50).forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'customer-list-item';
                 item.innerHTML = `
                     <div class="cust-name">${c.name}</div>
                     <div class="cust-detail">${c.address}</div>
                     <div class="nav-actions">
-                         <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-route"></i> Rute</button>
-                         <button class="nav-btn btn-gmaps" onclick="event.stopPropagation(); openGoogleMaps(${c.lat}, ${c.lng})"><i class="fab fa-google"></i> Maps</button>
+                        <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-route"></i> Rute</button>
+                        <button class="nav-btn btn-gmaps" onclick="event.stopPropagation(); openGoogleMaps(${c.lat}, ${c.lng})"><i class="fab fa-google"></i> Maps</button>
                     </div>
                 `;
-                item.onclick = function() {
-                    map.flyTo([c.lat, c.lng], 18);
-                    c.layer.openPopup();
-                };
+                item.onclick = () => { map.flyTo([c.lat, c.lng], 18); c.layer.openPopup(); };
                 fragment.appendChild(item);
             });
             container.appendChild(fragment);
-            
-            if (filtered.length > displayLimit) {
-                const info = document.createElement('div');
-                info.style.padding = "10px";
-                info.style.textAlign = "center";
-                info.innerHTML = `Menampilkan ${displayLimit} dari ${filtered.length} hasil.`;
-                container.appendChild(info);
-            }
         }
 
-        function clearCustomers() {
-            if(confirm("PERINGATAN: Ini akan menghapus SEMUA data pelanggan yang telah diakumulasi. Lanjutkan?")) {
-                customerLayer.clearLayers();
-                customersCache = [];
+        async function getRoute(start, end, name) {
+            if (!start) { alert("Deteksi lokasi dulu."); locateUser(); return; }
+            try {
+                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`);
+                const data = await res.json();
+                if(data.code !== 'Ok') throw new Error();
+                
                 routeLayer.clearLayers();
-                updateCustomerListOptimized();
-                document.getElementById('routeStatus').textContent = "Nonaktif";
-                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#27ae60';
-                showToast("Semua data pelanggan direset.");
-            }
+                L.geoJSON(data.routes[0].geometry, { style: { color: '#2980b9', weight: 6 } }).addTo(routeLayer);
+                map.fitBounds(L.latLngBounds(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]])), { padding: [50, 50] });
+                
+                const km = (data.routes[0].distance / 1000).toFixed(1);
+                document.getElementById('routeStatus').textContent = `${km} km`;
+                showToast(`Rute ke ${name}: ${km} km`);
+            } catch(e) { showToast("Gagal hitung rute."); }
         }
 
-        // --- 6. GeoJSON/KML Logic ---
+        function openGoogleMaps(lat, lng) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'); }
+        function locateUser() {
+            navigator.geolocation.getCurrentPosition((p) => {
+                currentUserLatLng = [p.coords.latitude, p.coords.longitude];
+                userLocationLayer.clearLayers();
+                L.circleMarker(currentUserLatLng, { radius: 8, color: '#2980b9', fillColor: '#fff', weight: 2 }).addTo(userLocationLayer).bindPopup("Lokasi Anda").openPopup();
+                map.flyTo(currentUserLatLng, 15);
+                showToast("Lokasi ditemukan.");
+            }, () => showToast("GPS Gagal."));
+        }
+        
         function calculateGeometry(layer, type) {
-            let resultText = "";
             const geoJSON = layer.toGeoJSON();
             if (type === 'polygon' || type === 'rectangle') {
                 const areaHa = (turf.area(geoJSON) / 10000).toFixed(2);
-                resultText = `Luas: ${areaHa} Ha`;
-                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
-                layer.feature.properties.area = resultText;
+                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>Luas: ${areaHa} Ha`);
+                layer.feature.properties.area = areaHa;
             } else if (type === 'polyline') {
-                const length = turf.length(geoJSON);
-                const lengthStr = length < 1 ? `${(length*1000).toFixed(0)} m` : `${length.toFixed(2)} km`;
-                resultText = lengthStr;
-                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
-                layer.feature.properties.length = resultText;
+                const len = turf.length(geoJSON).toFixed(2);
+                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>Panjang: ${len} km`);
+                layer.feature.properties.length = len;
             } else if (type === 'marker') {
-                const c = layer.getLatLng();
-                resultText = `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
-                layer.bindPopup(`<b>MARKER</b><br>${resultText}`);
-                layer.feature.properties.coords = resultText;
+                layer.bindPopup(`<b>MARKER</b>`);
             }
         }
-
-        function updateDrawStats() {
+        function updateDrawStats() { 
             const tbody = document.getElementById('featureTableBody');
             const statsDiv = document.getElementById('drawStatsContainer');
             tbody.innerHTML = '';
             let counts = { marker: 0, polyline: 0, polygon: 0, rectangle: 0 };
             let html = '';
-
             drawnItems.eachLayer(layer => {
-                const props = layer.feature.properties;
-                const type = props.type || 'unknown';
+                const type = layer.feature.properties.type || 'unknown';
                 if(counts[type] !== undefined) counts[type]++;
-                let info = props.area || props.length || props.coords || '-';
+                let info = layer.feature.properties.area || layer.feature.properties.length || '-';
                 tbody.innerHTML += `<tr><td>${type}</td><td>${info}</td></tr>`;
             });
-
             const icons = {marker:'fa-map-marker-alt', polyline:'fa-route', polygon:'fa-draw-polygon', rectangle:'fa-vector-square'};
             for (const [k, v] of Object.entries(counts)) {
                 if(v > 0) html += `<div class="stats-card" style="border-left-color: var(--accent-color)"><i class="fas ${icons[k]}"></i> ${k}<span class="stats-val">${v}</span></div>`;
             }
             statsDiv.innerHTML = html || '<div class="stats-card" style="border-left-color:#ccc">Belum ada gambar.</div>';
         }
-
-        document.getElementById('geojsonInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const fileName = file.name.toLowerCase();
-            const isKml = fileName.endsWith('.kml');
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    let geojson;
-                    if (isKml) {
-                        const parser = new DOMParser();
-                        const kml = parser.parseFromString(e.target.result, "text/xml");
-                        if (kml.getElementsByTagName("parsererror").length > 0) throw new Error("Format KML salah.");
-                        geojson = toGeoJSON.kml(kml);
-                    } else {
-                        geojson = JSON.parse(e.target.result);
-                    }
-                    const layer = L.geoJSON(geojson, {
-                        onEachFeature: function(f, l) {
-                            let type = 'unknown';
-                            if(l instanceof L.Marker) type = 'marker';
-                            else if(l instanceof L.Polygon) type = 'polygon';
-                            else if(l instanceof L.Polyline) type = 'polyline';
-                            if(type !== 'unknown') calculateGeometry(l, type);
-                            l.feature = l.feature || {};
-                            l.feature.properties = l.feature.properties || {};
-                            l.feature.properties.type = type;
-                            drawnItems.addLayer(l);
-                        }
-                    });
-                    if(layer.getLayers().length) map.fitBounds(layer.getBounds());
-                    updateDrawStats();
-                    showToast("File dimuat.");
-                } catch(err) { showToast("File tidak valid."); }
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        });
-
-        function exportGeoJSON() {
-            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data.");
-            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
-            const a = document.createElement('a');
-            a.setAttribute("href", data);
-            a.setAttribute("download", "peta_amerta.geojson");
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            showToast("File GeoJSON diunduh.");
-        }
-
-        function clearDrawings() {
-            if(confirm("Hapus semua gambar?")) {
-                drawnItems.clearLayers();
-                updateDrawStats();
-            }
-        }
-
-        // --- 7. UI Helpers ---
+        
+        function clearCustomers() { if(confirm("Hapus semua data?")) { customerLayer.clearLayers(); customersCache = []; routeLayer.clearLayers(); updateCustomerListOptimized(); document.getElementById('routeStatus').textContent = "Nonaktif"; } }
+        function clearDrawings() { if(confirm("Hapus gambar?")) { drawnItems.clearLayers(); updateDrawStats(); } }
+        
         function switchTab(id) {
             document.querySelectorAll('.sidebar-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('active', 'active-cust');
-            });
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'active-cust'));
             const btns = document.querySelectorAll('.tab-btn');
             if(id === 'tools') btns[0].classList.add('active');
             if(id === 'customers') btns[1].classList.add('active-cust');
@@ -811,22 +746,16 @@
 
         function showToast(msg) {
             const t = document.getElementById("toast");
-            t.textContent = msg;
-            t.className = "show";
+            t.textContent = msg; t.className = "show";
             setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
         }
         
         document.getElementById('toggleSidebar').addEventListener('click', () => {
             const sb = document.getElementById('sidebar');
-            if(window.innerWidth <= 768) {
-                sb.style.display = sb.style.display === 'none' ? 'flex' : 'none';
-            } else {
-                sb.style.width = sb.style.width === '0px' ? 'var(--sidebar-width)' : '0px';
-            }
+            sb.style.width = sb.style.width === '0px' ? 'var(--sidebar-width)' : '0px';
         });
 
         updateDrawStats();
     </script>
 </body>
-
 </html>
