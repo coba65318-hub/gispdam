@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem GIS Navigasi - Perumda Amerta Dayan Gunung</title>
     
     <!-- Leaflet CSS -->
@@ -17,10 +17,10 @@
 
     <style>
         :root {
-            --primary-color: #0056b3; /* Biru Tua Perumda */
-            --secondary-color: #004494;
-            --accent-color: #00a8cc;
-            --customer-color: #e67e22; /* Oranye Pelanggan */
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --customer-color: #e67e22;
             --route-color: #2980b9; 
             --bg-light: #f8f9fa;
             --text-dark: #333;
@@ -54,7 +54,7 @@
             z-index: 1000; 
         }
         .brand { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .brand i { color: var(--accent-color); font-size: 1.4rem; }
+        .brand i { color: var(--customer-color); }
 
         /* --- Layout Utama --- */
         .main-container { display: flex; flex: 1; height: calc(100vh - var(--header-height)); position: relative; }
@@ -79,7 +79,7 @@
             display: flex; align-items: center; justify-content: center; gap: 5px;
         }
         .tab-btn:hover { background: #e9ecef; }
-        .tab-btn.active { background: white; color: var(--primary-color); border-bottom: 3px solid var(--primary-color); }
+        .tab-btn.active { background: white; color: var(--accent-color); border-bottom: 3px solid var(--accent-color); }
         .tab-btn.active-cust { color: var(--customer-color); border-bottom: 3px solid var(--customer-color); }
 
         /* Konten Sidebar */
@@ -94,7 +94,7 @@
         /* --- Komponen UI --- */
         .control-group { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .control-group:last-child { border-bottom: none; }
-        .control-group h3 { font-size: 0.75rem; text-transform: uppercase; color: #95a5a6; margin-bottom: 12px; letter-spacing: 0.5px; font-weight: 700; }
+        .control-group h3 { font-size: 0.8rem; text-transform: uppercase; color: #95a5a6; margin-bottom: 12px; letter-spacing: 0.5px; font-weight: 700; }
 
         .btn { 
             display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -103,13 +103,13 @@
             text-decoration: none; color: white; font-weight: 500;
         }
         .btn:active { transform: scale(0.98); }
-        .btn-primary { background-color: var(--primary-color); } .btn-primary:hover { background-color: #004494; }
+        .btn-primary { background-color: var(--accent-color); } .btn-primary:hover { background-color: #2980b9; }
         .btn-warning { background-color: var(--customer-color); } .btn-warning:hover { background-color: #d35400; }
         .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
         .btn-success { background-color: #27ae60; } .btn-success:hover { background-color: #219150; }
         .btn-info { background-color: #16a085; } .btn-info:hover { background-color: #138d75; }
-        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; }
-        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+        .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
+        .btn-outline:hover { background: #f8f9fa; color: #333; }
 
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
@@ -121,7 +121,7 @@
         .stats-row { display: flex; gap: 10px; margin-bottom: 10px; }
         .stats-card { 
             flex: 1; background: var(--bg-light); padding: 10px; border-radius: 6px; 
-            font-size: 0.8rem; border-left: 4px solid var(--primary-color); box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            font-size: 0.8rem; border-left: 4px solid var(--accent-color); box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .cust-stats { border-left-color: var(--customer-color); }
         .stats-val { display: block; font-size: 1.1rem; font-weight: bold; color: var(--text-dark); margin-top: 2px; }
@@ -152,12 +152,12 @@
             border-radius: 6px; font-size: 0.9rem; background: #fdfdfd;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
-        #searchCustomer:focus { border-color: var(--primary-color); background: white; }
+        #searchCustomer:focus { border-color: var(--accent-color); background: white; }
 
-        /* Toast Notification */
+        /* Toast */
         #toast { 
-            visibility: hidden; min-width: 280px; background-color: #333; color: #fff; 
-            text-align: center; border-radius: 50px; padding: 12px 24px; position: fixed; 
+            visibility: hidden; min-width: 280px; background-color: #2c3e50; color: #fff; 
+            text-align: center; border-radius: 50px; padding: 14px 24px; position: fixed; 
             z-index: 2000; left: 50%; bottom: 30px; transform: translateX(-50%); 
             font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; 
             transition: opacity 0.3s, bottom 0.3s; 
@@ -168,23 +168,13 @@
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
-        /* Loading Overlay */
-        #loadingOverlay {
-            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8);
-            z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%;
-            width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         /* Responsive */
         @media (max-width: 768px) {
             .main-container { flex-direction: column-reverse; }
-            aside { width: 100%; height: 50%; border-top: 1px solid var(--border-color); border-right: none; }
-            #map { height: 50%; }
-            .brand span { font-size: 0.9rem; }
+            aside { width: 100%; height: 45%; border-top: 1px solid var(--border-color); border-right: none; }
+            #map { height: 55%; }
+            .brand span { display: none; }
+            .brand i { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -196,8 +186,8 @@
             <span>Perumda Amerta Dayan Gunung</span>
         </div>
         <div>
-            <button id="toggleSidebar" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 0.9rem;">
-                <i class="fas fa-bars"></i> <span class="btn-text">Menu</span>
+            <button id="toggleSidebar" class="btn btn-outline" style="width: auto; padding: 5px 10px; border:none; color: white;">
+                <i class="fas fa-bars"></i>
             </button>
         </div>
     </header>
@@ -206,19 +196,19 @@
         <!-- Sidebar Panel -->
         <aside id="sidebar">
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('tools')" title="Alat Gambar">
+                <button class="tab-btn" onclick="switchTab('tools')" title="Alat Gambar">
                     <i class="fas fa-drafting-compass"></i> <span class="btn-text">Alat</span>
                 </button>
-                <button class="tab-btn" onclick="switchTab('customers')" title="Pelanggan">
+                <button class="tab-btn active-cust" onclick="switchTab('customers')" title="Pelanggan">
                     <i class="fas fa-users"></i> <span class="btn-text">Data</span>
                 </button>
                 <button class="tab-btn" onclick="switchTab('data')" title="Info Gambar">
-                    <i class="fas fa-chart-pie"></i> <span class="btn-text">Info</span>
+                    <i class="fas fa-chart-bar"></i> <span class="btn-text">Info</span>
                 </button>
             </div>
 
             <!-- Tab 1: Tools -->
-            <div id="tools" class="sidebar-content active">
+            <div id="tools" class="sidebar-content">
                 <div class="control-group">
                     <h3>Navigasi & GPS</h3>
                     <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px; line-height: 1.4;">
@@ -227,6 +217,9 @@
                     <button class="btn btn-info" onclick="locateUser()">
                         <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
                     </button>
+                    <div id="gpsStatus" style="font-size: 0.75rem; color: #7f8c8d; margin-top: 5px; display:none;">
+                        <i class="fas fa-circle-notch fa-spin"></i> Mencari sinyal GPS...
+                    </div>
                 </div>
 
                 <div class="control-group">
@@ -251,17 +244,17 @@
             </div>
 
             <!-- Tab 2: Customers -->
-            <div id="customers" class="sidebar-content">
+            <div id="customers" class="sidebar-content active">
                 <div class="control-group">
                     <h3>Ringkasan</h3>
                     <div class="stats-row">
                         <div class="stats-card cust-stats">
-                            <span>Total Pelanggan</span>
+                            <span>Total</span>
                             <span class="stats-val" id="custTotal">0</span>
                         </div>
-                        <div class="stats-card" style="border-left-color: #2980b9;">
-                            <span>Jarak Rute</span>
-                            <span class="stats-val" id="routeStatus">- km</span>
+                        <div class="stats-card" style="border-left-color: #27ae60;">
+                            <span>Rute Aktif</span>
+                            <span class="stats-val" id="routeStatus">Nonaktif</span>
                         </div>
                     </div>
                 </div>
@@ -269,10 +262,10 @@
                 <div class="control-group" style="border-bottom: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3>Daftar Pelanggan</h3>
-                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;">Reset Data</button>
+                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;">Reset</button>
                     </div>
                     <input type="text" id="searchCustomer" placeholder="Cari nama atau alamat..." onkeyup="filterCustomers()">
-                    <div id="customerListContainer" style="max-height: 50vh; overflow-y: auto; padding-right: 5px;">
+                    <div id="customerListContainer" style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">
                         <div style="text-align:center; padding: 30px; color:#bdc3c7;">
                             <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
                             <p style="font-size:0.85rem;">Belum ada data.<br>Import CSV untuk memulai.</p>
@@ -286,7 +279,7 @@
                 <div class="control-group">
                     <h3>Statistik Gambar</h3>
                     <div id="drawStatsContainer">
-                        <div class="stats-card" style="border-left-color: #95a5a6;">Belum ada objek digambar.</div>
+                        <div class="stats-card" style="border-left-color: #95a5a6;">Belum ada objek.</div>
                     </div>
                 </div>
                 <div class="control-group">
@@ -306,12 +299,6 @@
 
         <!-- Peta Area -->
         <div id="map"></div>
-        
-        <!-- Loading Overlay -->
-        <div id="loadingOverlay">
-            <div class="spinner"></div>
-            <span style="font-weight:600; color:var(--primary-color)">Memproses Data...</span>
-        </div>
     </div>
 
     <div id="toast">Pesan Notifikasi</div>
@@ -338,27 +325,11 @@
         // Feature Groups
         const drawnItems = new L.FeatureGroup();
         
-        // OPTIMASI: Menggunakan MarkerClusterGroup untuk data besar (25k+)
+        // OPTIMASI: Menggunakan MarkerClusterGroup untuk 25k data
         const customerLayer = L.markerClusterGroup({
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
-            maxClusterRadius: 50,
-            spiderfyOnMaxZoom: true, 
-            iconCreateFunction: function(cluster) {
-                let c = ' marker-cluster-';
-                if (cluster.getChildCount() < 10) {
-                    c += 'small';
-                } else if (cluster.getChildCount() < 100) {
-                    c += 'medium';
-                } else {
-                    c += 'large';
-                }
-                return new L.DivIcon({ 
-                    html: '<div><span>' + cluster.getChildCount() + '</span></div>', 
-                    className: 'marker-cluster' + c, 
-                    iconSize: new L.Point(40, 40) 
-                });
-            }
+            maxClusterRadius: 50
         });
         
         const routeLayer = new L.LayerGroup(); 
@@ -369,25 +340,18 @@
         map.addLayer(routeLayer);
         map.addLayer(userLocationLayer);
 
-        // Cache array untuk menyimpan data pelanggan (Global)
+        // Cache array untuk menyimpan data pelanggan (agar akses cepat untuk sidebar/search)
         let customersCache = []; 
 
-        // --- 2. Alat Gambar (Leaflet Draw) ---
+        // --- 2. Alat Gambar ---
         const drawControl = new L.Control.Draw({
             draw: {
-                polyline: { shapeOptions: { color: '#0056b3' } },
-                polygon: { shapeOptions: { color: '#0056b3' }, allowIntersection: false },
-                rectangle: { shapeOptions: { color: '#0056b3' } },
+                polyline: { shapeOptions: { color: '#3498db' } },
+                polygon: { shapeOptions: { color: '#3498db' }, allowIntersection: false },
+                rectangle: { shapeOptions: { color: '#3498db' } },
                 circle: false,
                 circlemarker: false,
-                marker: { 
-                    icon: L.divIcon({ 
-                        className: 'custom-div-icon', 
-                        html: "<div style='background-color:#e74c3c; width:12px; height:12px; border-radius:50%; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3);'></div>", 
-                        iconSize: [12,12], 
-                        iconAnchor: [6,6] 
-                    }) 
-                }
+                marker: { icon: L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#e74c3c; width:10px; height:10px; border-radius:50%; border:2px solid white;'></div>", iconSize: [12,12], iconAnchor: [6,6] }) }
             },
             edit: { featureGroup: drawnItems, remove: true }
         });
@@ -411,7 +375,7 @@
         let currentUserLatLng = null;
 
         function locateUser() {
-            if (!navigator.geolocation) return showToast("Browser tidak mendukung Geolocation.");
+            if (!navigator.geolocation) return showToast("Browser tidak support Geolocation.");
             showToast("Mencari lokasi...");
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -421,55 +385,44 @@
                     userLocationLayer.clearLayers();
                     
                     const userMarker = L.circleMarker([lat, lng], {
-                        radius: 10, fillColor: "#2980b9", color: "#fff", weight: 3, opacity: 1, fillOpacity: 0.9
+                        radius: 8, fillColor: "#2980b9", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
                     }).addTo(userLocationLayer);
-                    
-                    userMarker.bindPopup("<b>Lokasi Anda Saat Ini</b>").openPopup();
-                    map.flyTo([lat, lng], 16);
+                    userMarker.bindPopup("<b>Lokasi Anda</b>").openPopup();
+                    map.flyTo([lat, lng], 15);
                     showToast("Lokasi ditemukan!");
                 },
-                () => showToast("Gagal mendapatkan lokasi. Pastikan GPS aktif.")
+                () => showToast("Gagal mendapatkan lokasi.")
             );
         }
 
         async function getRoute(startLatLng, endLatLng, destName) {
-            if (!startLatLng) { 
-                showToast("Lokasi Anda belum terdeteksi. Mengaktifkan GPS...");
-                locateUser(); 
-                return; 
-            }
-            
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            
+            if (!startLatLng) { alert("Cari lokasi Anda dulu (GPS)."); locateUser(); return; }
             const startStr = `${startLatLng.lng},${startLatLng.lat}`;
             const endStr = `${endLatLng.lng},${endLatLng.lat}`;
             
+            showToast("Menghitung rute...");
             try {
                 const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${startStr};${endStr}?overview=full&geometries=geojson`);
                 const data = await response.json();
-                
-                document.getElementById('loadingOverlay').style.display = 'none';
-
                 if (data.code !== 'Ok') throw new Error("Rute tidak ditemukan.");
 
                 const route = data.routes[0];
                 routeLayer.clearLayers();
                 
                 L.geoJSON(route.geometry, {
-                    style: { color: '#e67e22', weight: 6, opacity: 0.8, lineCap: 'round' }
+                    style: { color: 'var(--route-color)', weight: 6, opacity: 0.8 }
                 }).addTo(routeLayer);
 
                 const bounds = L.latLngBounds(route.geometry.coordinates.map(c => [c[1], c[0]]));
                 map.fitBounds(bounds, { padding: [50, 50] });
                 
-                const distanceKm = (route.distance / 1000).toFixed(2);
+                const distanceKm = (route.distance / 1000).toFixed(1);
                 const durationMin = Math.round(route.duration / 60);
                 document.getElementById('routeStatus').textContent = `${distanceKm} km`;
-                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#e67e22';
-                showToast(`Rute ke ${destName}: ${distanceKm} km (${durationMin} menit)`);
+                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#2980b9';
+                showToast(`Jarak: ${distanceKm} km (${durationMin} menit)`);
             } catch (err) {
-                document.getElementById('loadingOverlay').style.display = 'none';
-                showToast("Gagal menghitung rute. Periksa koneksi internet.");
+                showToast("Gagal hitung rute.");
             }
         }
 
@@ -477,43 +430,38 @@
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
 
-        // --- 4. CSV Logic (MODE APPEND: Data baru tidak menghapus data lama) ---
+        // --- 4. CSV Logic (Optimized for 25k Data) ---
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            document.getElementById('loadingOverlay').style.display = 'flex';
+            const container = document.getElementById('customerListContainer');
+            container.innerHTML = '<div style="text-align:center; padding:20px;">Sedang memproses data...<br><i class="fas fa-spinner fa-spin"></i></div>';
 
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                worker: true, 
+                worker: true,
                 complete: function(results) {
-                    document.getElementById('loadingOverlay').style.display = 'none';
                     if (results.data && results.data.length > 0) {
-                        processCustomerDataAppend(results.data);
+                        processCustomerDataOptimized(results.data);
                     } else {
-                        showToast("File CSV kosong atau salah format.");
+                        showToast("File CSV kosong.");
                     }
-                    e.target.value = ''; // Reset input file agar bisa upload file yang sama lagi jika perlu
+                    e.target.value = '';
                 },
-                error: function(err) { 
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    showToast("Error parsing CSV: " + err.message); 
-                }
+                error: function(err) { showToast("Error: " + err.message); }
             });
         });
 
-        // Fungsi khusus untuk MENAMBAH (Append) data, bukan menimpa
-        function processCustomerDataAppend(data) {
+        function processCustomerDataOptimized(data) {
             let count = 0;
-            // Kita buat bounds baru hanya untuk file ini agar peta fokus ke data baru
-            const newBounds = L.latLngBounds(); 
-            
-            // DETEKSI KOLOM (Otomatis mencari kolom Lat/Lng)
+            const bounds = L.latLngBounds();
+            customerLayer.clearLayers();
+            customersCache = [];
+
             const firstRow = data[0];
             let latKey = null, lngKey = null;
-            
             for (let key of Object.keys(firstRow)) {
                 const k = key.toLowerCase();
                 if (!latKey && (k.includes('lat') || k.includes('y') || k.includes('lintang'))) latKey = key;
@@ -521,7 +469,8 @@
             }
 
             if (!latKey || !lngKey) {
-                alert("Kolom Latitude/Longitude tidak ditemukan dalam CSV baru.");
+                alert("Kolom Latitude/Longitude tidak ditemukan.");
+                document.getElementById('customerListContainer').innerHTML = '';
                 return;
             }
 
@@ -530,39 +479,36 @@
                 const lng = parseFloat(row[lngKey]);
 
                 if (!isNaN(lat) && !isNaN(lng)) {
-                    // Deteksi kolom Nama
                     const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nama') || k.toLowerCase().includes('name')) || 'Pelanggan';
                     const name = row[nameKey] || 'Tanpa Nama';
 
-                    // Buat Marker
+                    // 1. Marker Ringan (CSS, bukan gambar)
                     const marker = L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'custom-div-icon',
-                            html: `<div style="background-color:#e67e22; width:10px; height:10px; border-radius:50%; border:1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`,
-                            iconSize: [10, 10],
-                            iconAnchor: [5, 5]
+                            html: `<div style="background-color:#e67e22; width:8px; height:8px; border-radius:50%; border:1px solid white;"></div>`,
+                            iconSize: [8, 8],
+                            iconAnchor: [4, 4]
                         })
                     });
 
+                    // Simpan data di marker
                     marker.custData = row;
                     marker.custName = name;
                     
+                    // Popup On Demand (saat klik saja)
                     marker.on('click', function() {
-                        let popupContent = `<div style="min-width:150px"><b>${name}</b><br>`;
+                        let popupContent = `<b>${name}</b><br>`;
                         for (const [key, value] of Object.entries(row)) {
-                             if(key !== latKey && key !== lngKey && key.length < 20) { 
-                                 popupContent += `<span style="color:#666; font-size:0.85em">${key}:</span> ${value}<br>`;
-                             }
+                             if(key !== latKey && key !== lngKey) popupContent += `<b>${key}:</b> ${value}<br>`;
                         }
-                        popupContent += `<br><button onclick="getRoute(currentUserLatLng, [${lat}, ${lng}], '${name.replace(/'/g, "\\'")}')" style="width:100%; padding:5px; background:#2980b9; color:white; border:none; border-radius:3px; cursor:pointer;">Rute ke Sini</button></div>`;
                         this.bindPopup(popupContent).openPopup();
                     });
 
-                    // TAMBAHKAN KE LAYER (Bukan Clear)
                     customerLayer.addLayer(marker);
-                    newBounds.extend([lat, lng]);
+                    bounds.extend([lat, lng]);
                     
-                    // TAMBAHKAN KE CACHE ARRAY
+                    // 2. Simpan ke cache array
                     let address = '';
                     for(const [k,v] of Object.entries(row)) {
                         if(k.toLowerCase().includes('alamat') || k.toLowerCase().includes('address')) { address = v; break; }
@@ -570,7 +516,7 @@
 
                     customersCache.push({
                         name: name,
-                        address: address || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`,
+                        address: address || lat.toFixed(4)+','+lng.toFixed(4),
                         lat: lat,
                         lng: lng,
                         layer: marker
@@ -581,24 +527,22 @@
             });
 
             if (count > 0) {
-                // Zoom ke data baru saja agar user fokus pada apa yang baru diupload
-                map.fitBounds(newBounds, { padding: [50, 50] });
-                
-                updateCustomerListOptimized(); // Refresh sidebar list
-                showToast(`${count} pelanggan berhasil <b>DITAMBAHKAN</b>. Total: ${customersCache.length}`);
+                map.fitBounds(bounds, { padding: [50, 50] });
+                updateCustomerListOptimized();
+                showToast(`${count} pelanggan dimuat.`);
             } else {
-                showToast("Tidak ada data koordinat valid pada file baru.");
+                showToast("Tidak ada data koordinat valid.");
             }
         }
 
-        // --- 5. Optimasi Sidebar (Virtual List Logic) ---
+        // --- 5. Optimasi Sidebar (Pagination) ---
         function updateCustomerListOptimized() {
             const container = document.getElementById('customerListContainer');
             const stats = document.getElementById('custTotal');
             container.innerHTML = '';
             
             const total = customersCache.length;
-            stats.innerText = total;
+            stats.innerHTML = `<b>${total}</b>`;
 
             // Render hanya 50 item pertama agar browser tidak crash
             const displayLimit = 50;
@@ -615,9 +559,9 @@
                 item.className = 'customer-list-item';
                 item.innerHTML = `
                     <div class="cust-name">${c.name}</div>
-                    <div class="cust-detail"><i class="fas fa-map-marker-alt"></i> ${c.address}</div>
+                    <div class="cust-detail">${c.address}</div>
                     <div class="nav-actions">
-                        <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Rute</button>
+                        <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-route"></i> Rute</button>
                         <button class="nav-btn btn-gmaps" onclick="event.stopPropagation(); openGoogleMaps(${c.lat}, ${c.lng})"><i class="fab fa-google"></i> Maps</button>
                     </div>
                 `;
@@ -635,9 +579,7 @@
                 info.style.textAlign = "center";
                 info.style.color = "#777";
                 info.style.fontSize = "0.8rem";
-                info.style.background = "#f9f9f9";
-                info.style.borderRadius = "4px";
-                info.innerHTML = `Menampilkan ${displayLimit} data pertama dari ${total} total.<br>Gunakan <b>Pencarian</b> di atas untuk menemukan data spesifik.`;
+                info.innerHTML = `... dan ${total - displayLimit} data lainnya.<br>Gunakan kolom pencarian di atas.`;
                 container.appendChild(info);
             }
         }
@@ -648,10 +590,10 @@
             const container = document.getElementById('customerListContainer');
             container.innerHTML = '';
 
-            // Filter dari cache array (sangat cepat)
+            // Filter dari cache array
             const filtered = customersCache.filter(c => 
-                (c.name && c.name.toUpperCase().includes(filter)) || 
-                (c.address && c.address.toUpperCase().includes(filter))
+                c.name.toUpperCase().includes(filter) || 
+                c.address.toUpperCase().includes(filter)
             );
 
             const displayLimit = 50; 
@@ -668,9 +610,9 @@
                 item.className = 'customer-list-item';
                 item.innerHTML = `
                     <div class="cust-name">${c.name}</div>
-                    <div class="cust-detail"><i class="fas fa-map-marker-alt"></i> ${c.address}</div>
+                    <div class="cust-detail">${c.address}</div>
                     <div class="nav-actions">
-                         <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-directions"></i> Rute</button>
+                         <button class="nav-btn btn-route" onclick="event.stopPropagation(); getRoute(currentUserLatLng, [${c.lat}, ${c.lng}], '${c.name.replace(/'/g, "\\'")}')"><i class="fas fa-route"></i> Rute</button>
                          <button class="nav-btn btn-gmaps" onclick="event.stopPropagation(); openGoogleMaps(${c.lat}, ${c.lng})"><i class="fab fa-google"></i> Maps</button>
                     </div>
                 `;
@@ -686,50 +628,43 @@
                 const info = document.createElement('div');
                 info.style.padding = "10px";
                 info.style.textAlign = "center";
-                info.style.color = "#777";
-                info.style.fontSize = "0.8rem";
-                info.innerHTML = `Menampilkan ${displayLimit} dari ${filtered.length} hasil pencarian. Persempit kata kunci.`;
+                info.innerHTML = `Menampilkan ${displayLimit} dari ${filtered.length} hasil.`;
                 container.appendChild(info);
             }
         }
 
         function clearCustomers() {
-            if(confirm("Apakah Anda yakin ingin menghapus SEMUA data pelanggan dari peta?")) {
+            if(confirm("Hapus semua data pelanggan?")) {
                 customerLayer.clearLayers();
                 customersCache = [];
                 routeLayer.clearLayers();
                 updateCustomerListOptimized();
-                document.getElementById('routeStatus').textContent = "- km";
-                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#2980b9';
-                showToast("Semua data pelanggan direset.");
+                document.getElementById('routeStatus').textContent = "Nonaktif";
+                document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#27ae60';
+                showToast("Data pelanggan direset.");
             }
         }
 
-        // --- 6. GeoJSON/KML Logic & Geometry Calc ---
+        // --- 6. GeoJSON/KML Logic ---
         function calculateGeometry(layer, type) {
             let resultText = "";
             const geoJSON = layer.toGeoJSON();
-            
-            try {
-                if (type === 'polygon' || type === 'rectangle') {
-                    const areaHa = (turf.area(geoJSON) / 10000).toFixed(2);
-                    resultText = `Luas: ${areaHa} Ha`;
-                    layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
-                    layer.feature.properties.area = resultText;
-                } else if (type === 'polyline') {
-                    const length = turf.length(geoJSON);
-                    const lengthStr = length < 1 ? `${(length*1000).toFixed(0)} m` : `${length.toFixed(2)} km`;
-                    resultText = lengthStr;
-                    layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
-                    layer.feature.properties.length = resultText;
-                } else if (type === 'marker') {
-                    const c = layer.getLatLng();
-                    resultText = `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
-                    layer.bindPopup(`<b>MARKER</b><br>${resultText}`);
-                    layer.feature.properties.coords = resultText;
-                }
-            } catch (e) {
-                console.error("Geometry calculation error", e);
+            if (type === 'polygon' || type === 'rectangle') {
+                const areaHa = (turf.area(geoJSON) / 10000).toFixed(2);
+                resultText = `Luas: ${areaHa} Ha`;
+                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
+                layer.feature.properties.area = resultText;
+            } else if (type === 'polyline') {
+                const length = turf.length(geoJSON);
+                const lengthStr = length < 1 ? `${(length*1000).toFixed(0)} m` : `${length.toFixed(2)} km`;
+                resultText = lengthStr;
+                layer.bindPopup(`<b>${type.toUpperCase()}</b><br>${resultText}`);
+                layer.feature.properties.length = resultText;
+            } else if (type === 'marker') {
+                const c = layer.getLatLng();
+                resultText = `${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
+                layer.bindPopup(`<b>MARKER</b><br>${resultText}`);
+                layer.feature.properties.coords = resultText;
             }
         }
 
@@ -745,19 +680,13 @@
                 const type = props.type || 'unknown';
                 if(counts[type] !== undefined) counts[type]++;
                 let info = props.area || props.length || props.coords || '-';
-                tbody.innerHTML += `<tr><td style="text-transform:capitalize">${type}</td><td>${info}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${type}</td><td>${info}</td></tr>`;
             });
 
             const icons = {marker:'fa-map-marker-alt', polyline:'fa-route', polygon:'fa-draw-polygon', rectangle:'fa-vector-square'};
-            let hasData = false;
-            
             for (const [k, v] of Object.entries(counts)) {
-                if(v > 0) {
-                    hasData = true;
-                    html += `<div class="stats-card" style="border-left-color: var(--primary-color)"><i class="fas ${icons[k]}"></i> ${k}<span class="stats-val">${v}</span></div>`;
-                }
+                if(v > 0) html += `<div class="stats-card" style="border-left-color: var(--accent-color)"><i class="fas ${icons[k]}"></i> ${k}<span class="stats-val">${v}</span></div>`;
             }
-            
             statsDiv.innerHTML = html || '<div class="stats-card" style="border-left-color:#ccc">Belum ada gambar.</div>';
         }
 
@@ -767,9 +696,6 @@
             const fileName = file.name.toLowerCase();
             const isKml = fileName.endsWith('.kml');
             const reader = new FileReader();
-            
-            document.getElementById('loadingOverlay').style.display = 'flex';
-
             reader.onload = function(e) {
                 try {
                     let geojson;
@@ -787,9 +713,7 @@
                             if(l instanceof L.Marker) type = 'marker';
                             else if(l instanceof L.Polygon) type = 'polygon';
                             else if(l instanceof L.Polyline) type = 'polyline';
-                            
                             if(type !== 'unknown') calculateGeometry(l, type);
-                            
                             l.feature = l.feature || {};
                             l.feature.properties = l.feature.properties || {};
                             l.feature.properties.type = type;
@@ -798,23 +722,19 @@
                     });
                     if(layer.getLayers().length) map.fitBounds(layer.getBounds());
                     updateDrawStats();
-                    showToast("File peta berhasil dimuat.");
-                } catch(err) { 
-                    console.error(err);
-                    showToast("File tidak valid atau rusak."); 
-                }
-                document.getElementById('loadingOverlay').style.display = 'none';
+                    showToast("File dimuat.");
+                } catch(err) { showToast("File tidak valid."); }
                 e.target.value = '';
             };
             reader.readAsText(file);
         });
 
         function exportGeoJSON() {
-            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data gambar untuk diekspor.");
+            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data.");
             const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
             const a = document.createElement('a');
             a.setAttribute("href", data);
-            a.setAttribute("download", "peta_amerta_export.geojson");
+            a.setAttribute("download", "peta_amerta.geojson");
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -822,10 +742,9 @@
         }
 
         function clearDrawings() {
-            if(confirm("Hapus semua gambar yang telah Anda buat?")) {
+            if(confirm("Hapus semua gambar?")) {
                 drawnItems.clearLayers();
                 updateDrawStats();
-                showToast("Semua gambar dihapus.");
             }
         }
 
@@ -844,39 +763,20 @@
 
         function showToast(msg) {
             const t = document.getElementById("toast");
-            t.innerHTML = msg; // Support HTML in toast for bold text
+            t.textContent = msg;
             t.className = "show";
             setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
         }
         
         document.getElementById('toggleSidebar').addEventListener('click', () => {
             const sb = document.getElementById('sidebar');
-            const mapDiv = document.getElementById('map');
-            
             if(window.innerWidth <= 768) {
-                // Mobile toggle
-                if(sb.style.display === 'none') {
-                    sb.style.display = 'flex';
-                    mapDiv.style.height = '50%';
-                } else {
-                    sb.style.display = 'none';
-                    mapDiv.style.height = '100%';
-                }
+                sb.style.display = sb.style.display === 'none' ? 'flex' : 'none';
             } else {
-                // Desktop collapse
-                if(sb.style.width === '0px') {
-                    sb.style.width = 'var(--sidebar-width)';
-                    sb.style.opacity = '1';
-                } else {
-                    sb.style.width = '0px';
-                    sb.style.opacity = '0';
-                }
+                sb.style.width = sb.style.width === '0px' ? 'var(--sidebar-width)' : '0px';
             }
-            // Trigger map resize after transition
-            setTimeout(() => { map.invalidateSize(); }, 350);
         });
 
-        // Inisialisasi awal
         updateDrawStats();
     </script>
 </body>
