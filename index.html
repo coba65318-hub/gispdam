@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <!-- MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -69,12 +69,15 @@
             display: flex; 
             flex-direction: column; 
             z-index: 900; 
-            transition: transform 0.3s ease, margin-left 0.3s ease;
+            transition: width 0.3s ease, margin-left 0.3s ease, transform 0.3s ease;
             box-shadow: 2px 0 5px rgba(0,0,0,0.05);
         }
         
+        /* Class untuk menyembunyikan sidebar (digunakan di localStorage) */
+        aside.closed { width: 0; overflow: hidden; border: none; }
+        
         /* Navigasi Tab */
-        .tabs { display: flex; border-bottom: 1px solid var(--border-color); background: #f1f1f1; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border-color); background: #f1f1f1; min-width: var(--sidebar-width); }
         .tab-btn { 
             flex: 1; padding: 12px 5px; background: var(--bg-light); border: none; cursor: pointer; 
             font-weight: 600; color: #7f8c8d; transition: all 0.2s; font-size: 0.85rem; 
@@ -85,7 +88,7 @@
         .tab-btn.active-cust { color: var(--customer-color); border-bottom: 3px solid var(--customer-color); }
 
         /* Konten Sidebar */
-        .sidebar-content { flex: 1; overflow-y: auto; padding: 15px; display: none; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 15px; display: none; min-width: var(--sidebar-width); }
         .sidebar-content.active { display: block; animation: fadeIn 0.3s; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -110,6 +113,8 @@
         .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
         .btn-success { background-color: #27ae60; } .btn-success:hover { background-color: #219150; }
         .btn-info { background-color: #16a085; } .btn-info:hover { background-color: #138d75; }
+        .btn-dark { background-color: #2c3e50; } .btn-dark:hover { background-color: #34495e; }
+        
         .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
         .btn-outline:hover { background: #f8f9fa; color: #333; }
 
@@ -156,13 +161,6 @@
         }
         #searchCustomer:focus { border-color: var(--accent-color); background: white; }
 
-        /* URL Input */
-        #urlInput {
-            width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; 
-            border-radius: 6px; font-size: 0.85rem; font-family: monospace; color: #555;
-        }
-        #urlInput:focus { border-color: var(--accent-color); outline: none; }
-
         /* Toast */
         #toast { 
             visibility: hidden; min-width: 280px; background-color: #2c3e50; color: #fff; 
@@ -205,7 +203,7 @@
         <!-- Sidebar Panel -->
         <aside id="sidebar">
             <div class="tabs">
-                <button class="tab-btn" onclick="switchTab('tools')" title="Alat Gambar">
+                <button class="tab-btn" id="tab-tools" onclick="switchTab('tools')" title="Alat Gambar">
                     <i class="fas fa-drafting-compass"></i> <span class="btn-text">Alat</span>
                 </button>
                 <button class="tab-btn active-cust" onclick="switchTab('customers')" title="Pelanggan">
@@ -216,32 +214,14 @@
                 </button>
             </div>
 
-            <!-- Tab 1: Tools -->
+            <!-- Tab 1: Tools (Admin Only) -->
             <div id="tools" class="sidebar-content">
-                <!-- Bagian Baru: Import Folder -->
-                <div class="control-group">
-                    <h3>Import Banyak File (Folder)</h3>
-                    <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">
-                        Pilih folder berisi banyak CSV/KML sekaligus.
-                    </p>
+                <div class="control-group" id="importSection">
+                    <h3>Admin: Import Data</h3>
                     <div class="file-input-wrapper btn btn-primary">
                         <i class="fas fa-folder-open"></i> Import Folder (CSV/KML)
-                        <!-- webkitdirectory memungkinkan pemilihan folder -->
                         <input type="file" id="folderInput" webkitdirectory directory multiple>
                     </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>Load Data Otomatis (URL)</h3>
-                    <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">Link "Publish to Web" (G-Drive) atau URL file publik.</p>
-                    <input type="text" id="urlInput" placeholder="https://...">
-                    <button class="btn btn-info" onclick="loadDataFromUrl()">
-                        <i class="fas fa-cloud-download-alt"></i> Muat dari URL
-                    </button>
-                </div>
-
-                <div class="control-group">
-                    <h3>Import File Satu-satu</h3>
                     <div class="file-input-wrapper btn btn-warning">
                         <i class="fas fa-file-csv"></i> Import CSV (Single)
                         <input type="file" id="csvInput" accept=".csv">
@@ -250,6 +230,16 @@
                         <i class="fas fa-map-marked"></i> Import Peta (Single)
                         <input type="file" id="geojsonInput" accept=".geojson,.json,.kml">
                     </div>
+                </div>
+
+                <div class="control-group" id="finalFileSection">
+                    <h3>Buat File Final</h3>
+                    <p style="font-size:0.75rem; color:#666; margin-bottom:10px;">
+                        Klik tombol di bawah untuk membuat file HTML baru yang berisi data saat ini. File ini bisa dibagikan ke orang lain tanpa perlu import ulang.
+                    </p>
+                    <button class="btn btn-dark" onclick="generateStandaloneHTML()">
+                        <i class="fas fa-file-code"></i> Buat File Final (Offline)
+                    </button>
                 </div>
 
                 <div class="control-group">
@@ -289,13 +279,13 @@
                 <div class="control-group" style="border-bottom: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3>Daftar Pelanggan</h3>
-                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;">Reset Semua</button>
+                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;" id="resetBtn">Reset Data</button>
                     </div>
                     <input type="text" id="searchCustomer" placeholder="Cari nama atau alamat..." onkeyup="filterCustomers()">
                     <div id="customerListContainer" style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">
                         <div style="text-align:center; padding: 30px; color:#bdc3c7;">
                             <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p style="font-size:0.85rem;">Belum ada data.<br>Import Folder atau File.</p>
+                            <p style="font-size:0.85rem;">Belum ada data.</p>
                         </div>
                     </div>
                 </div>
@@ -365,95 +355,153 @@
         let customersCache = []; 
         let currentUserLatLng = null;
 
-        // --- 2. Logic Import Folder (Banyak File) ---
-        document.getElementById('folderInput').addEventListener('change', async function(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-
-            // Filter hanya file yang didukung
-            const validFiles = files.filter(f => {
-                const ext = f.name.split('.').pop().toLowerCase();
-                return ['csv', 'kml', 'geojson', 'json'].includes(ext);
-            });
-
-            if (validFiles.length === 0) {
-                showToast("Tidak ada file CSV/KML/JSON di folder tersebut.");
-                return;
-            }
-
-            showToast(`Memproses ${validFiles.length} file...`);
-            let processedCount = 0;
-
-            // Loop satu per satu agar tidak hang browser
-            for (const file of validFiles) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                
-                if (ext === 'csv') {
-                    // Proses CSV
-                    await new Promise((resolve) => {
-                        Papa.parse(file, {
-                            header: true,
-                            skipEmptyLines: true,
-                            complete: (results) => {
-                                if (results.data) processCustomerDataOptimized(results.data);
-                                resolve();
-                            },
-                            error: () => resolve() // Lanjut meski error file satu
-                        });
-                    });
-                } else if (['kml', 'geojson', 'json'].includes(ext)) {
-                    // Proses Peta
-                    await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (evt) => {
-                            processGeoContent(evt.target.result, ext === 'kml' ? 'kml' : 'geojson');
-                            resolve();
-                        };
-                        reader.onerror = () => resolve();
-                        reader.readAsText(file);
-                    });
-                }
-                processedCount++;
-            }
-
-            // Reset input agar bisa pilih folder yang sama lagi kalau perlu
-            e.target.value = '';
+        // --- 2. Sidebar State Persistence (Ingat Posisi) ---
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const isClosed = sb.classList.contains('closed');
             
-            // Update tampilan peta di akhir proses
-            if(customerLayer.getLayers().length > 0 || drawnItems.getLayers().length > 0) {
-                const group = new L.FeatureGroup([customerLayer, drawnItems]);
-                map.fitBounds(group.getBounds(), { padding: [50, 50] });
-            }
-
-            showToast(`Selesai! ${processedCount} file diproses.`);
-        });
-
-        // --- 3. Logic Load dari URL ---
-        async function loadDataFromUrl(urlInput) {
-            const url = urlInput || document.getElementById('urlInput').value.trim();
-            if (!url) return showToast("URL kosong.");
-            showToast("Sedang mengambil data...");
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Gagal mengambil data.");
-                const text = await response.text();
-                const isCSV = url.includes('csv') || url.includes('spreadsheets');
-                const isKML = url.includes('kml');
-                
-                if (isCSV) {
-                    const results = Papa.parse(text, { header: true, skipEmptyLines: true });
-                    if (results.data) processCustomerDataOptimized(results.data);
-                    showToast("CSV dimuat dari URL.");
-                } else if (isKML || url.includes('geojson')) {
-                    processGeoContent(text, isKML ? 'kml' : 'geojson');
-                    showToast("Peta dimuat dari URL.");
-                }
-            } catch (error) {
-                showToast("Error: Cek koneksi atau izin akses (CORS).");
+            if (isClosed) {
+                sb.classList.remove('closed');
+                localStorage.setItem('sidebarState', 'open');
+            } else {
+                sb.classList.add('closed');
+                localStorage.setItem('sidebarState', 'closed');
             }
         }
 
-        // --- 4. Logic GeoJSON & Processing ---
+        function loadSidebarState() {
+            const state = localStorage.getItem('sidebarState');
+            const sb = document.getElementById('sidebar');
+            if (state === 'closed') {
+                sb.classList.add('closed');
+            } else {
+                sb.classList.remove('closed');
+            }
+        }
+
+        document.getElementById('toggleSidebar').addEventListener('click', toggleSidebar);
+        loadSidebarState(); // Jalankan saat buka
+
+        // --- 3. Logic Import Folder & File ---
+        document.getElementById('folderInput').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files).filter(f => ['csv', 'kml', 'geojson', 'json'].includes(f.name.split('.').pop().toLowerCase()));
+            if (files.length === 0) return;
+            showToast(`Memproses ${files.length} file...`);
+            
+            for (const file of files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (ext === 'csv') {
+                    await new Promise(r => Papa.parse(file, { header:true, skipEmptyLines:true, complete: (res) => { if(res.data) processCustomerDataOptimized(res.data); r(); } }));
+                } else {
+                    await new Promise(r => {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => { processGeoContent(evt.target.result, ext==='kml'?'kml':'geojson'); r(); };
+                        reader.readAsText(file);
+                    });
+                }
+            }
+            e.target.value = '';
+            fitMapToAll();
+            showToast("Import Selesai.");
+        });
+
+        document.getElementById('csvInput').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            Papa.parse(e.target.files[0], { header:true, skipEmptyLines:true, complete:(r)=>{ if(r.data) processCustomerDataOptimized(r.data); } });
+            e.target.value = '';
+        });
+
+        document.getElementById('geojsonInput').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const isKml = e.target.files[0].name.toLowerCase().endsWith('.kml');
+                processGeoContent(evt.target.result, isKml?'kml':'geojson');
+            };
+            reader.readAsText(e.target.files[0]);
+            e.target.value = '';
+        });
+
+        // --- 4. Logic Generate Standalone HTML (Solusi Utama) ---
+        function generateStandaloneHTML() {
+            if (customersCache.length === 0 && drawnItems.getLayers().length === 0) {
+                return alert("Data kosong! Import data dulu sebelum membuat file final.");
+            }
+
+            showToast("Sedang menyusun file final...");
+            
+            // 1. Siapkan Data
+            const embeddedData = {
+                customers: customersCache.map(c => ({ // Hanya simpan data penting untuk menghemat ukuran
+                    name: c.name,
+                    address: c.address,
+                    lat: c.lat,
+                    lng: c.lng,
+                    raw: c.raw
+                })),
+                drawings: drawnItems.toGeoJSON()
+            };
+
+            // 2. Ambil seluruh HTML dokumen saat ini
+            let htmlContent = document.documentElement.outerHTML;
+
+            // 3. Modifikasi HTML untuk versi Final
+            // a) Hapus tombol import
+            htmlContent = htmlContent.replace(/<div class="control-group" id="importSection">[\s\S]*?<\/div>/, '<div class="control-group" style="display:none; text-align:center; padding:20px; color:#999;">(Data sudah tertanam)</div>');
+            
+            // b) Hapus tombol "Buat File Final" (biar tidak bingung user penerima)
+            htmlContent = htmlContent.replace(/<div class="control-group" id="finalFileSection">[\s\S]*?<\/div>/, '');
+            
+            // c) Hapus tombol Reset Data
+            htmlContent = htmlContent.replace(/<button onclick="clearCustomers\(\)"[\s\S]*?<\/button>/, '');
+
+            // d) Sembunyikan Tab Alat (Opsional, agar UI lebih bersih untuk user)
+            // htmlContent = htmlContent.replace(/<button class="tab-btn" id="tab-tools"[\s\S]*?<\/button>/, '');
+
+            // 4. Inject Script Data
+            const scriptTag = `<script>
+                window.PRELOADED_DATA = ${JSON.stringify(embeddedData)};
+                window.addEventListener('load', function() {
+                    if(window.PRELOADED_DATA) {
+                        const d = window.PRELOADED_DATA;
+                        if(d.customers && d.customers.length > 0) {
+                            // Panggil fungsi proses data secara manual
+                            processCustomerDataOptimized(d.customers);
+                            console.log("Data preloaded: " + d.customers.length + " items");
+                        }
+                        if(d.drawings && d.drawings.features.length > 0) {
+                           // Load gambar
+                           const layer = L.geoJSON(d.drawings, {
+                               onEachFeature: function(f, l) {
+                                    let t='unknown'; if(l instanceof L.Marker) t='marker'; else if(l instanceof L.Polygon) t='polygon'; else if(l instanceof L.Polyline) t='polyline';
+                                    if(t!=='unknown') calculateGeometry(l, t);
+                                    l.feature = l.feature||{}; l.feature.properties=l.feature.properties||{}; l.feature.properties.type=t;
+                                    drawnItems.addLayer(l);
+                               }
+                           });
+                           if(layer.getLayers().length) map.fitBounds(layer.getBounds());
+                           updateDrawStats();
+                        }
+                    }
+                });
+            <\/script>`;
+
+            // Masukkan script sebelum penutup body
+            htmlContent = htmlContent.replace('</body>', scriptTag + '</body>');
+
+            // 5. Download File
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'SistemGIS_Final_Offline.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("File Final berhasil diunduh!");
+        }
+
+        // --- 5. Logic Processing Standard ---
         function processGeoContent(content, type) {
             try {
                 let geojson;
@@ -465,17 +513,11 @@
                 } else {
                     geojson = JSON.parse(content);
                 }
-                
                 const layer = L.geoJSON(geojson, {
                     onEachFeature: function(f, l) {
-                        let layerType = 'unknown';
-                        if(l instanceof L.Marker) layerType = 'marker';
-                        else if(l instanceof L.Polygon) layerType = 'polygon';
-                        else if(l instanceof L.Polyline) layerType = 'polyline';
-                        if(layerType !== 'unknown') calculateGeometry(l, layerType);
-                        l.feature = l.feature || {};
-                        l.feature.properties = l.feature.properties || {};
-                        l.feature.properties.type = layerType;
+                        let t='unknown'; if(l instanceof L.Marker) t='marker'; else if(l instanceof L.Polygon) t='polygon'; else if(l instanceof L.Polyline) t='polyline';
+                        if(t!=='unknown') calculateGeometry(l, t);
+                        l.feature = l.feature||{}; l.feature.properties=l.feature.properties||{}; l.feature.properties.type=t;
                         drawnItems.addLayer(l);
                     }
                 });
@@ -483,141 +525,49 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- 5. Alat Gambar ---
-        const drawControl = new L.Control.Draw({
-            draw: {
-                polyline: { shapeOptions: { color: '#3498db' } },
-                polygon: { shapeOptions: { color: '#3498db' }, allowIntersection: false },
-                rectangle: { shapeOptions: { color: '#3498db' } },
-                circle: false, circlemarker: false,
-                marker: { icon: L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#e74c3c; width:10px; height:10px; border-radius:50%; border:2px solid white;'></div>", iconSize: [12,12], iconAnchor: [6,6] }) }
-            },
-            edit: { featureGroup: drawnItems, remove: true }
-        });
-        map.addControl(drawControl);
-
-        map.on(L.Draw.Event.CREATED, function (e) {
-            const layer = e.layer;
-            layer.feature = layer.feature || {};
-            layer.feature.type = "Feature";
-            layer.feature.properties = { type: e.layerType, id: Date.now() };
-            calculateGeometry(layer, e.layerType);
-            drawnItems.addLayer(layer);
-            updateDrawStats();
-            showToast("Objek ditambahkan.");
-        });
-        map.on(L.Draw.Event.EDITED, updateDrawStats);
-        map.on(L.Draw.Event.DELETED, updateDrawStats);
-
-        // --- 6. CSV Logic (Akumulatif) ---
-        document.getElementById('csvInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true, worker: true,
-                complete: function(results) {
-                    if (results.data) processCustomerDataOptimized(results.data);
-                    e.target.value = '';
-                }
-            });
-        });
-
-        document.getElementById('geojsonInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const isKml = file.name.toLowerCase().endsWith('.kml');
-                processGeoContent(evt.target.result, isKml ? 'kml' : 'geojson');
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        });
-
         function processCustomerDataOptimized(data) {
             if(data.length === 0) return;
             let count = 0;
-            const firstRow = data[0];
-            let latKey = null, lngKey = null;
-            for (let key of Object.keys(firstRow)) {
-                const k = key.toLowerCase();
-                if (!latKey && (k.includes('lat') || k.includes('y') || k.includes('lintang'))) latKey = key;
-                if (!lngKey && (k.includes('lng') || k.includes('long') || k.includes('x') || k.includes('bujur'))) lngKey = key;
-            }
+            // Simple key detection
+            const first = data[0];
+            let latKey = Object.keys(first).find(k => k.toLowerCase().includes('lat') || k.toLowerCase().includes('lintang') || k.toLowerCase().includes('y'));
+            let lngKey = Object.keys(first).find(k => k.toLowerCase().includes('lng') || k.toLowerCase().includes('long') || k.toLowerCase().includes('bujur') || k.toLowerCase().includes('x'));
+            let nameKey = Object.keys(first).find(k => k.toLowerCase().includes('nama') || k.toLowerCase().includes('name'));
 
-            if (!latKey || !lngKey) return; // Silent fail for mixed files
+            if(!latKey || !lngKey) return;
 
             data.forEach(row => {
                 const lat = parseFloat(row[latKey]);
                 const lng = parseFloat(row[lngKey]);
                 if (!isNaN(lat) && !isNaN(lng)) {
-                    const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nama') || k.toLowerCase().includes('name')) || 'Pelanggan';
                     const name = row[nameKey] || 'Tanpa Nama';
-
                     const marker = L.marker([lat, lng], {
-                        icon: L.divIcon({
-                            className: 'custom-div-icon',
-                            html: `<div style="background-color:#e67e22; width:8px; height:8px; border-radius:50%; border:1px solid white;"></div>`,
-                            iconSize: [8, 8], iconAnchor: [4, 4]
-                        })
+                        icon: L.divIcon({ className:'custom-div-icon', html:`<div style='background-color:#e67e22; width:8px; height:8px; border-radius:50%; border:1px solid white;'></div>`, iconSize:[8,8], iconAnchor:[4,4] })
                     });
-
                     marker.custData = row; marker.custName = name;
-                    marker.on('click', function() {
-                        let popupContent = `<b>${name}</b><br>`;
-                        for (const [key, value] of Object.entries(row)) {
-                             if(key !== latKey && key !== lngKey) popupContent += `<b>${key}:</b> ${value}<br>`;
-                        }
-                        this.bindPopup(popupContent).openPopup();
+                    marker.on('click', function(){
+                        let p=`<b>${name}</b><br>`; for(const [k,v] of Object.entries(row)) if(k!==latKey && k!==lngKey) p+=`<b>${k}:</b> ${v}<br>`;
+                        this.bindPopup(p).openPopup();
                     });
-
                     customerLayer.addLayer(marker);
-                    
-                    let address = '';
-                    for(const [k,v] of Object.entries(row)) {
-                        if(k.toLowerCase().includes('alamat') || k.toLowerCase().includes('address')) { address = v; break; }
-                    }
-
-                    customersCache.push({
-                        name: name, address: address || lat.toFixed(4)+','+lng.toFixed(4),
-                        lat: lat, lng: lng, layer: marker, raw: row 
-                    });
+                    let addr = ''; for(const [k,v] of Object.entries(row)) if(k.toLowerCase().includes('alamat')||k.toLowerCase().includes('address')) { addr=v; break; }
+                    customersCache.push({ name:name, address:addr||lat.toFixed(4)+','+lng.toFixed(4), lat:lat, lng:lng, layer:marker, raw:row });
                     count++;
                 }
             });
-
-            if (count > 0) {
-                updateCustomerListOptimized();
-                // Jangan fitBounds disini agar tidak pusing saat load banyak file, dihandle di loop folder
-            }
+            if(count>0) { updateCustomerListOptimized(); }
         }
 
-        // --- 7. Fitur Ekspor & Lainnya ---
-        function exportCustomerCSV() {
-            if (customersCache.length === 0) return showToast("Tidak ada data.");
-            const csv = Papa.unparse(customersCache.map(c => c.raw));
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `data_semua_${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            showToast("Data diekspor.");
+        function fitMapToAll() {
+            const group = new L.FeatureGroup([customerLayer, drawnItems]);
+            if(group.getLayers().length) map.fitBounds(group.getBounds().pad(0.1));
         }
 
-        function exportGeoJSON() {
-            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada gambar.");
-            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
-            const a = document.createElement('a');
-            a.href = data; a.download = `peta_${Date.now()}.geojson`;
-            document.body.appendChild(a); a.click(); a.remove();
-        }
-
+        // --- 6. UI & Helpers (Search, Route, dll) ---
         function updateCustomerListOptimized() {
             const container = document.getElementById('customerListContainer');
             const stats = document.getElementById('custTotal');
-            container.innerHTML = '';
-            stats.innerHTML = `<b>${customersCache.length}</b>`;
-
+            container.innerHTML = ''; stats.innerHTML = `<b>${customersCache.length}</b>`;
             const displayLimit = 50;
             const fragment = document.createDocumentFragment();
             customersCache.slice(0, displayLimit).forEach(c => {
@@ -635,12 +585,9 @@
                 fragment.appendChild(item);
             });
             container.appendChild(fragment);
-            
-            if (customersCache.length > displayLimit) {
-                const info = document.createElement('div');
-                info.style.cssText = "padding:10px; text-align:center; color:#777; font-size:0.8rem";
-                info.innerHTML = `... dan ${customersCache.length - displayLimit} data lainnya.`;
-                container.appendChild(info);
+            if(customersCache.length > displayLimit) {
+                const i = document.createElement('div'); i.style.cssText="padding:10px;text-align:center;color:#777;font-size:0.8rem";
+                i.innerHTML=`... dan ${customersCache.length-displayLimit} data lainnya.`; container.appendChild(i);
             }
         }
 
@@ -649,9 +596,7 @@
             const container = document.getElementById('customerListContainer');
             container.innerHTML = '';
             const filtered = customersCache.filter(c => c.name.toUpperCase().includes(filter) || c.address.toUpperCase().includes(filter));
-            
             if(filtered.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#999">Data tidak ditemukan.</p>'; return; }
-
             const fragment = document.createDocumentFragment();
             filtered.slice(0, 50).forEach(c => {
                 const item = document.createElement('div');
@@ -676,11 +621,9 @@
                 const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`);
                 const data = await res.json();
                 if(data.code !== 'Ok') throw new Error();
-                
                 routeLayer.clearLayers();
                 L.geoJSON(data.routes[0].geometry, { style: { color: '#2980b9', weight: 6 } }).addTo(routeLayer);
                 map.fitBounds(L.latLngBounds(data.routes[0].geometry.coordinates.map(c => [c[1], c[0]])), { padding: [50, 50] });
-                
                 const km = (data.routes[0].distance / 1000).toFixed(1);
                 document.getElementById('routeStatus').textContent = `${km} km`;
                 showToast(`Rute ke ${name}: ${km} km`);
@@ -744,16 +687,49 @@
             if(id === 'data') btns[2].classList.add('active');
         }
 
+        function exportCustomerCSV() {
+            if (customersCache.length === 0) return showToast("Tidak ada data.");
+            const csv = Papa.unparse(customersCache.map(c => c.raw));
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `data_pelanggan_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showToast("Data diekspor.");
+        }
+
+        function exportGeoJSON() {
+            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada gambar.");
+            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
+            const a = document.createElement('a');
+            a.href = data; a.download = `peta_${Date.now()}.geojson`;
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+
         function showToast(msg) {
             const t = document.getElementById("toast");
             t.textContent = msg; t.className = "show";
             setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
         }
-        
-        document.getElementById('toggleSidebar').addEventListener('click', () => {
-            const sb = document.getElementById('sidebar');
-            sb.style.width = sb.style.width === '0px' ? 'var(--sidebar-width)' : '0px';
+
+        // Init Drawing
+        const drawControl = new L.Control.Draw({
+            draw: { polyline: { shapeOptions: { color: '#3498db' } }, polygon: { shapeOptions: { color: '#3498db' }, allowIntersection: false }, rectangle: { shapeOptions: { color: '#3498db' } }, circle: false, circlemarker: false, marker: { icon: L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#e74c3c; width:10px; height:10px; border-radius:50%; border:2px solid white;'></div>", iconSize: [12,12], iconAnchor: [6,6] }) } },
+            edit: { featureGroup: drawnItems, remove: true }
         });
+        map.addControl(drawControl);
+        map.on(L.Draw.Event.CREATED, function (e) {
+            const layer = e.layer;
+            layer.feature = layer.feature || {};
+            layer.feature.type = "Feature";
+            layer.feature.properties = { type: e.layerType, id: Date.now() };
+            calculateGeometry(layer, e.layerType);
+            drawnItems.addLayer(layer);
+            updateDrawStats();
+            showToast("Objek ditambahkan.");
+        });
+        map.on(L.Draw.Event.EDITED, updateDrawStats);
+        map.on(L.Draw.Event.DELETED, updateDrawStats);
 
         updateDrawStats();
     </script>
