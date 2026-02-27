@@ -225,11 +225,20 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>Import Data Eksternal</h3>
+                    <h3>Manajemen Data Pelanggan</h3>
                     <div class="file-input-wrapper btn btn-warning">
                         <i class="fas fa-file-csv"></i> Import CSV Pelanggan
                         <input type="file" id="csvInput" accept=".csv">
                     </div>
+                    <!-- Tombol Ekspor -->
+                    <button class="btn btn-success" onclick="exportCustomerCSV()">
+                        <i class="fas fa-file-export"></i> Ekspor CSV Pelanggan
+                    </button>
+                    <p style="font-size:0.7rem; color:#999; margin-top:5px;">Data akan ditambahkan (akumulatif).</p>
+                </div>
+
+                <div class="control-group">
+                    <h3>Import Peta Tambahan</h3>
                     <div class="file-input-wrapper btn btn-primary">
                         <i class="fas fa-map-marked"></i> Import Peta (GeoJSON/KML)
                         <input type="file" id="geojsonInput" accept=".geojson,.json,.kml">
@@ -237,8 +246,8 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>Ekspor Data</h3>
-                    <button class="btn btn-success" onclick="exportGeoJSON()">
+                    <h3>Ekspor Gambar</h3>
+                    <button class="btn btn-info" onclick="exportGeoJSON()">
                         <i class="fas fa-download"></i> Unduh Gambar (GeoJSON)
                     </button>
                     <p style="font-size:0.7rem; color:#999; margin-top:5px;">Mengunduh hasil gambar poligon/garis Anda.</p>
@@ -264,7 +273,7 @@
                 <div class="control-group" style="border-bottom: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3>Daftar Pelanggan</h3>
-                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;">Reset</button>
+                        <button onclick="clearCustomers()" style="background:none; border:none; color:#e74c3c; cursor:pointer; font-size:0.75rem; font-weight:600;">Reset Semua</button>
                     </div>
                     <input type="text" id="searchCustomer" placeholder="Cari nama atau alamat..." onkeyup="filterCustomers()">
                     <div id="customerListContainer" style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">
@@ -327,7 +336,7 @@
         // Feature Groups
         const drawnItems = new L.FeatureGroup();
         
-        // OPTIMASI: Menggunakan MarkerClusterGroup untuk 25k data
+        // OPTIMASI: Menggunakan MarkerClusterGroup untuk data besar
         const customerLayer = L.markerClusterGroup({
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
@@ -342,7 +351,7 @@
         map.addLayer(routeLayer);
         map.addLayer(userLocationLayer);
 
-        // Cache array untuk menyimpan data pelanggan (agar akses cepat untuk sidebar/search)
+        // Cache array untuk menyimpan data pelanggan (Akumulatif)
         let customersCache = []; 
 
         // --- 2. Alat Gambar ---
@@ -432,7 +441,7 @@
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
 
-        // --- 4. CSV Logic (Optimized for 25k Data) ---
+        // --- 4. CSV Logic (Akumulatif - Tidak Menghapus Data Lama) ---
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -458,9 +467,13 @@
 
         function processCustomerDataOptimized(data) {
             let count = 0;
-            const bounds = L.latLngBounds();
-            customerLayer.clearLayers();
-            customersCache = [];
+            
+            // PERUBAHAN: Tidak lagi menghapus data lama
+            // customerLayer.clearLayers(); 
+            // customersCache = []; 
+            
+            // Gunakan bounds layer saat ini agar view tidak hilang, atau buat bounds baru untuk file ini
+            const newBounds = L.latLngBounds(); 
 
             const firstRow = data[0];
             let latKey = null, lngKey = null;
@@ -472,7 +485,8 @@
 
             if (!latKey || !lngKey) {
                 alert("Kolom Latitude/Longitude tidak ditemukan.");
-                document.getElementById('customerListContainer').innerHTML = '';
+                // Jangan hapus loading message jika gagal, biarkan user tahu error
+                document.getElementById('customerListContainer').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Error: Kolom Lat/Lng tidak ditemukan.</div>';
                 return;
             }
 
@@ -484,7 +498,7 @@
                     const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('nama') || k.toLowerCase().includes('name')) || 'Pelanggan';
                     const name = row[nameKey] || 'Tanpa Nama';
 
-                    // 1. Marker Ringan (CSS, bukan gambar)
+                    // 1. Marker Ringan
                     const marker = L.marker([lat, lng], {
                         icon: L.divIcon({
                             className: 'custom-div-icon',
@@ -494,11 +508,9 @@
                         })
                     });
 
-                    // Simpan data di marker
                     marker.custData = row;
                     marker.custName = name;
                     
-                    // Popup On Demand (saat klik saja)
                     marker.on('click', function() {
                         let popupContent = `<b>${name}</b><br>`;
                         for (const [key, value] of Object.entries(row)) {
@@ -508,9 +520,9 @@
                     });
 
                     customerLayer.addLayer(marker);
-                    bounds.extend([lat, lng]);
+                    newBounds.extend([lat, lng]);
                     
-                    // 2. Simpan ke cache array
+                    // 2. Simpan ke cache (Append/Push ke belakang)
                     let address = '';
                     for(const [k,v] of Object.entries(row)) {
                         if(k.toLowerCase().includes('alamat') || k.toLowerCase().includes('address')) { address = v; break; }
@@ -521,7 +533,8 @@
                         address: address || lat.toFixed(4)+','+lng.toFixed(4),
                         lat: lat,
                         lng: lng,
-                        layer: marker
+                        layer: marker,
+                        raw: row 
                     });
 
                     count++;
@@ -529,12 +542,44 @@
             });
 
             if (count > 0) {
-                map.fitBounds(bounds, { padding: [50, 50] });
+                // Zoom agar mencakup SEMUA data (lama + baru)
+                if(customerLayer.getLayers().length > 0) {
+                    map.fitBounds(customerLayer.getBounds(), { padding: [50, 50] });
+                }
+                
                 updateCustomerListOptimized();
-                showToast(`${count} pelanggan dimuat.`);
+                // Pesan notifikasi menunjukkan penambahan
+                showToast(`${count} pelanggan ditambahkan. Total: ${customersCache.length}`);
             } else {
-                showToast("Tidak ada data koordinat valid.");
+                showToast("Tidak ada data koordinat valid yang ditambahkan.");
             }
+        }
+
+        // --- 4b. Fitur Ekspor CSV (Otomatis Mencakup Semua Data) ---
+        function exportCustomerCSV() {
+            if (customersCache.length === 0) {
+                showToast("Tidak ada data pelanggan untuk diekspor.");
+                return;
+            }
+
+            // Karena customersCache bersifat akumulatif, export ini akan otomatis
+            // menggabungkan semua file yang pernah di-import.
+            const dataToExport = customersCache.map(c => c.raw);
+
+            const csv = Papa.unparse(dataToExport);
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            const date = new Date().toISOString().slice(0,10);
+            link.setAttribute("download", `ekspor_semua_pelanggan_${date}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("Semua data pelanggan berhasil diekspor!");
         }
 
         // --- 5. Optimasi Sidebar (Pagination) ---
@@ -546,7 +591,8 @@
             const total = customersCache.length;
             stats.innerHTML = `<b>${total}</b>`;
 
-            // Render hanya 50 item pertama agar browser tidak crash
+            // Render hanya 50 item pertama (atau terakhir, tergantung preferensi, di sini kita pakai pertama agar konsisten)
+            // Jika ingin menampilkan data terbaru di atas, bisa menggunakan slice().reverse()
             const displayLimit = 50;
             const dataToShow = customersCache.slice(0, displayLimit);
 
@@ -636,14 +682,14 @@
         }
 
         function clearCustomers() {
-            if(confirm("Hapus semua data pelanggan?")) {
+            if(confirm("PERINGATAN: Ini akan menghapus SEMUA data pelanggan yang telah diakumulasi. Lanjutkan?")) {
                 customerLayer.clearLayers();
                 customersCache = [];
                 routeLayer.clearLayers();
                 updateCustomerListOptimized();
                 document.getElementById('routeStatus').textContent = "Nonaktif";
                 document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#27ae60';
-                showToast("Data pelanggan direset.");
+                showToast("Semua data pelanggan direset.");
             }
         }
 
@@ -784,4 +830,3 @@
 </body>
 
 </html>
-
