@@ -1,17 +1,16 @@
-jadikan csv bisa disimpan semua: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem GIS Navigasi - Perumda Amerta Dayan Gunung</title>
+    <title>Sistem GIS Navigasi - Perumda Amerta Dayan Gunung (Auto-Save)</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <!-- Leaflet Draw CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <!-- MarkerCluster CSS (Wajib untuk data besar) -->
+    <!-- MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <!-- Font Awesome -->
@@ -27,7 +26,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             --bg-light: #f8f9fa;
             --text-dark: #333;
             --border-color: #ddd;
-            --sidebar-width: 380px;
+            --sidebar-width: 400px;
             --header-height: 60px;
         }
 
@@ -100,7 +99,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
 
         .btn { 
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 10px 15px; margin-bottom: 10px; border: none; border-radius: 6px; 
+            width: 100%; padding: 10px 15px; margin-bottom: 8px; border: none; border-radius: 6px; 
             cursor: pointer; font-size: 0.9rem; transition: transform 0.1s, box-shadow 0.2s, background 0.2s; 
             text-decoration: none; color: white; font-weight: 500;
         }
@@ -112,6 +111,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         .btn-info { background-color: #16a085; } .btn-info:hover { background-color: #138d75; }
         .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
         .btn-outline:hover { background: #f8f9fa; color: #333; }
+        .btn-dark { background-color: #2c3e50; } .btn-dark:hover { background-color: #1a252f; }
 
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
@@ -173,8 +173,8 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         /* Responsive */
         @media (max-width: 768px) {
             .main-container { flex-direction: column-reverse; }
-            aside { width: 100%; height: 45%; border-top: 1px solid var(--border-color); border-right: none; }
-            #map { height: 55%; }
+            aside { width: 100%; height: 50%; border-top: 1px solid var(--border-color); border-right: none; }
+            #map { height: 50%; }
             .brand span { display: none; }
             .brand i { font-size: 1.2rem; }
         }
@@ -188,6 +188,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             <span>Perumda Amerta Dayan Gunung</span>
         </div>
         <div>
+            <span id="saveIndicator" style="font-size: 0.7rem; margin-right: 10px; color: #bdc3c7; display:none;"><i class="fas fa-check-circle"></i> Tersimpan</span>
             <button id="toggleSidebar" class="btn btn-outline" style="width: auto; padding: 5px 10px; border:none; color: white;">
                 <i class="fas fa-bars"></i>
             </button>
@@ -198,8 +199,8 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         <!-- Sidebar Panel -->
         <aside id="sidebar">
             <div class="tabs">
-                <button class="tab-btn" onclick="switchTab('tools')" title="Alat Gambar">
-                    <i class="fas fa-drafting-compass"></i> <span class="btn-text">Alat</span>
+                <button class="tab-btn" onclick="switchTab('tools')" title="Alat & Proyek">
+                    <i class="fas fa-tools"></i> <span class="btn-text">Proyek</span>
                 </button>
                 <button class="tab-btn active-cust" onclick="switchTab('customers')" title="Pelanggan">
                     <i class="fas fa-users"></i> <span class="btn-text">Data</span>
@@ -209,25 +210,36 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                 </button>
             </div>
 
-            <!-- Tab 1: Tools -->
+            <!-- Tab 1: Tools & Project Management -->
             <div id="tools" class="sidebar-content">
-                <div class="control-group">
-                    <h3>Navigasi & GPS</h3>
-                    <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px; line-height: 1.4;">
-                        Tentukan posisi Anda untuk menghitung rute terpendek ke pelanggan.
+                
+                <!-- Bagian Manajemen Proyek (Fitur Baru) -->
+                <div class="control-group" style="background: #fdfefe; padding: 10px; border-radius: 6px; border: 1px solid #e1e8ed;">
+                    <h3 style="color: var(--primary-color); margin-top:0;">Manajemen Proyek</h3>
+                    <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px; line-height: 1.3;">
+                        Data tersimpan otomatis di browser ini. Gunakan opsi di bawah untuk memindahkan data ke komputer lain.
                     </p>
-                    <button class="btn btn-info" onclick="locateUser()">
-                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
+                    
+                    <button class="btn btn-success" onclick="saveToLocalBrowser()">
+                        <i class="fas fa-sync-alt"></i> Simpan di Browser (Auto)
                     </button>
-                    <div id="gpsStatus" style="font-size: 0.75rem; color: #7f8c8d; margin-top: 5px; display:none;">
-                        <i class="fas fa-circle-notch fa-spin"></i> Mencari sinyal GPS...
+                    
+                    <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                        <button class="btn btn-dark" onclick="exportProject()" style="flex:1;">
+                            <i class="fas fa-file-export"></i> Download File
+                        </button>
+                        <div class="file-input-wrapper btn btn-primary" style="flex:1;">
+                            <i class="fas fa-file-import"></i> Buka File
+                            <input type="file" id="projectInput" accept=".json">
+                        </div>
                     </div>
+                    <p style="font-size:0.7rem; color:#999; text-align:center;">Download file untuk dibagikan ke tim lain.</p>
                 </div>
 
                 <div class="control-group">
-                    <h3>Import Data Eksternal</h3>
+                    <h3>Import Data Mentah</h3>
                     <div class="file-input-wrapper btn btn-warning">
-                        <i class="fas fa-file-csv"></i> Import CSV Pelanggan
+                        <i class="fas fa-file-csv"></i> Import CSV Baru
                         <input type="file" id="csvInput" accept=".csv">
                     </div>
                     <div class="file-input-wrapper btn btn-primary">
@@ -237,11 +249,13 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                 </div>
 
                 <div class="control-group">
-                    <h3>Ekspor Data</h3>
-                    <button class="btn btn-success" onclick="exportGeoJSON()">
-                        <i class="fas fa-download"></i> Unduh Gambar (GeoJSON)
+                    <h3>Navigasi & GPS</h3>
+                    <button class="btn btn-info" onclick="locateUser()">
+                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
                     </button>
-                    <p style="font-size:0.7rem; color:#999; margin-top:5px;">Mengunduh hasil gambar poligon/garis Anda.</p>
+                    <div id="gpsStatus" style="font-size: 0.75rem; color: #7f8c8d; margin-top: 5px; display:none;">
+                        <i class="fas fa-circle-notch fa-spin"></i> Mencari sinyal GPS...
+                    </div>
                 </div>
             </div>
 
@@ -251,7 +265,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                     <h3>Ringkasan</h3>
                     <div class="stats-row">
                         <div class="stats-card cust-stats">
-                            <span>Total</span>
+                            <span>Total Data</span>
                             <span class="stats-val" id="custTotal">0</span>
                         </div>
                         <div class="stats-card" style="border-left-color: #27ae60;">
@@ -269,8 +283,8 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                     <input type="text" id="searchCustomer" placeholder="Cari nama atau alamat..." onkeyup="filterCustomers()">
                     <div id="customerListContainer" style="max-height: 55vh; overflow-y: auto; padding-right: 5px;">
                         <div style="text-align:center; padding: 30px; color:#bdc3c7;">
-                            <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p style="font-size:0.85rem;">Belum ada data.<br>Import CSV untuk memulai.</p>
+                            <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p style="font-size:0.85rem;">Belum ada data.<br>Import CSV atau Buka File Proyek.</p>
                         </div>
                     </div>
                 </div>
@@ -311,7 +325,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
-    <!-- MarkerCluster JS (Wajib untuk Optimasi) -->
+    <!-- MarkerCluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <script>
@@ -327,7 +341,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         // Feature Groups
         const drawnItems = new L.FeatureGroup();
         
-        // OPTIMASI: Menggunakan MarkerClusterGroup untuk 25k data
+        // OPTIMASI: MarkerClusterGroup
         const customerLayer = L.markerClusterGroup({
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
@@ -342,8 +356,9 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         map.addLayer(routeLayer);
         map.addLayer(userLocationLayer);
 
-        // Cache array untuk menyimpan data pelanggan (agar akses cepat untuk sidebar/search)
+        // Cache array untuk menyimpan data pelanggan
         let customersCache = []; 
+        let isRestoring = false; // Flag mencegah loop saat restore
 
         // --- 2. Alat Gambar ---
         const drawControl = new L.Control.Draw({
@@ -359,6 +374,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         });
         map.addControl(drawControl);
 
+        // Event Listeners untuk Draw (Auto-save trigger)
         map.on(L.Draw.Event.CREATED, function (e) {
             const layer = e.layer;
             layer.feature = layer.feature || {};
@@ -367,13 +383,143 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             calculateGeometry(layer, e.layerType);
             drawnItems.addLayer(layer);
             updateDrawStats();
-            showToast("Objek ditambahkan ke peta.");
+            if(!isRestoring) { showToast("Objek ditambahkan."); saveToLocalBrowser(); }
         });
 
-        map.on(L.Draw.Event.EDITED, updateDrawStats);
-        map.on(L.Draw.Event.DELETED, updateDrawStats);
+        map.on(L.Draw.Event.EDITED, () => { updateDrawStats(); if(!isRestoring) saveToLocalBrowser(); });
+        map.on(L.Draw.Event.DELETED, () => { updateDrawStats(); if(!isRestoring) saveToLocalBrowser(); });
 
-        // --- 3. Navigasi & GPS ---
+        // --- 3. Manajemen Proyek (Penyimpanan & Sharing) ---
+
+        // Fungsi: Simpan ke LocalStorage
+        function saveToLocalBrowser() {
+            try {
+                // Kita simpan raw data pelanggan (bukan hanya ringkasan) agar CSV utuh
+                const state = {
+                    timestamp: Date.now(),
+                    customers: customersCache.map(c => c.rawRow), // Simpan baris mentah CSV
+                    drawings: drawnItems.toGeoJSON()
+                };
+                
+                localStorage.setItem('amerta_gis_project', JSON.stringify(state));
+                showSaveIndicator();
+            } catch (e) {
+                console.error("Storage full", e);
+                showToast("Memori Penuh! Gunakan 'Download File'.");
+            }
+        }
+
+        // Fungsi: Load dari LocalStorage (Otomatis saat buka)
+        function loadFromLocalBrowser() {
+            const saved = localStorage.getItem('amerta_gis_project');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    if (state.customers && state.customers.length > 0) {
+                        if(confirm("Ditemukan data tersimpan di browser. Pulihkan data tersebut?")) {
+                            isRestoring = true;
+                            // Load Customers
+                            processCustomerDataOptimized(state.customers);
+                            // Load Drawings
+                            drawnItems.clearLayers();
+                            if(state.drawings && state.drawings.features) {
+                                const layer = L.geoJSON(state.drawings, {
+                                    onEachFeature: function(f, l) {
+                                        let type = 'unknown';
+                                        if(l instanceof L.Marker) type = 'marker';
+                                        else if(l instanceof L.Polygon) type = 'polygon';
+                                        else if(l instanceof L.Polyline) type = 'polyline';
+                                        if(type !== 'unknown') calculateGeometry(l, type);
+                                        drawnItems.addLayer(l);
+                                    }
+                                });
+                                updateDrawStats();
+                            }
+                            isRestoring = false;
+                            showToast("Data berhasil dipulihkan.");
+                        }
+                    }
+                } catch (e) {
+                    console.error("Corrupt data", e);
+                    localStorage.removeItem('amerta_gis_project');
+                }
+            }
+        }
+
+        // Fungsi: Export ke File JSON (Untuk Sharing)
+        function exportProject() {
+            if (customersCache.length === 0 && drawnItems.getLayers().length === 0) {
+                return showToast("Tidak ada data untuk diekspor.");
+            }
+
+            const state = {
+                version: "1.0",
+                timestamp: Date.now(),
+                customers: customersCache.map(c => c.rawRow),
+                drawings: drawnItems.toGeoJSON()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `Proyek_Amerta_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast("File proyek diunduh.");
+        }
+
+        // Fungsi: Import dari File JSON
+        document.getElementById('projectInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const state = JSON.parse(e.target.result);
+                    if(!state.customers && !state.drawings) throw new Error("Format file salah.");
+
+                    isRestoring = true;
+                    // Reset dulu
+                    customerLayer.clearLayers();
+                    customersCache = [];
+                    drawnItems.clearLayers();
+                    routeLayer.clearLayers();
+
+                    // Load Data
+                    if(state.customers && state.customers.length > 0) {
+                        processCustomerDataOptimized(state.customers);
+                    }
+                    if(state.drawings && state.drawings.features) {
+                        const layer = L.geoJSON(state.drawings, {
+                            onEachFeature: function(f, l) {
+                                let type = 'unknown';
+                                if(l instanceof L.Marker) type = 'marker';
+                                else if(l instanceof L.Polygon) type = 'polygon';
+                                else if(l instanceof L.Polyline) type = 'polyline';
+                                if(type !== 'unknown') calculateGeometry(l, type);
+                                drawnItems.addLayer(l);
+                            }
+                        });
+                        updateDrawStats();
+                    }
+
+                    isRestoring = false;
+                    saveToLocalBrowser(); // Simpan ke local storage baru
+                    showToast("Proyek berhasil dimuat.");
+                    document.getElementById('projectInput').value = ''; // Reset input
+
+                } catch (err) {
+                    showToast("Gagal membuka file proyek.");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- 4. Navigasi & GPS ---
         let currentUserLatLng = null;
 
         function locateUser() {
@@ -432,10 +578,16 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
 
-        // --- 4. CSV Logic (Optimized for 25k Data) ---
+        // --- 5. CSV Logic (Optimized for 25k Data) ---
         document.getElementById('csvInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
+
+            // Konfirmasi jika ada data lama
+            if(customersCache.length > 0 && !confirm("Data pelanggan lama akan ditimpa. Lanjutkan?")) {
+                e.target.value = '';
+                return;
+            }
 
             const container = document.getElementById('customerListContainer');
             container.innerHTML = '<div style="text-align:center; padding:20px;">Sedang memproses data...<br><i class="fas fa-spinner fa-spin"></i></div>';
@@ -446,7 +598,12 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                 worker: true,
                 complete: function(results) {
                     if (results.data && results.data.length > 0) {
+                        // Reset data lama
+                        customerLayer.clearLayers();
+                        customersCache = [];
+                        
                         processCustomerDataOptimized(results.data);
+                        saveToLocalBrowser(); // Auto-save setelah upload
                     } else {
                         showToast("File CSV kosong.");
                     }
@@ -459,8 +616,9 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
         function processCustomerDataOptimized(data) {
             let count = 0;
             const bounds = L.latLngBounds();
-            customerLayer.clearLayers();
-            customersCache = [];
+            
+            // Jika fungsi dipanggil ulang saat restore, bersihkan layer tapi jangan hapus cache jika tidak perlu
+            // Namun logika di atas sudah menangani clearLayers.
 
             const firstRow = data[0];
             let latKey = null, lngKey = null;
@@ -494,11 +652,11 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                         })
                     });
 
-                    // Simpan data di marker
+                    // Simpan data mentah (Raw Row) agar CSV lengkap saat save
                     marker.custData = row;
                     marker.custName = name;
                     
-                    // Popup On Demand (saat klik saja)
+                    // Popup On Demand
                     marker.on('click', function() {
                         let popupContent = `<b>${name}</b><br>`;
                         for (const [key, value] of Object.entries(row)) {
@@ -521,7 +679,8 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                         address: address || lat.toFixed(4)+','+lng.toFixed(4),
                         lat: lat,
                         lng: lng,
-                        layer: marker
+                        layer: marker,
+                        rawRow: row // PENTING: Simpan seluruh isi baris CSV
                     });
 
                     count++;
@@ -529,15 +688,15 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             });
 
             if (count > 0) {
-                map.fitBounds(bounds, { padding: [50, 50] });
+                if(!isRestoring) map.fitBounds(bounds, { padding: [50, 50] });
                 updateCustomerListOptimized();
-                showToast(`${count} pelanggan dimuat.`);
+                if(!isRestoring) showToast(`${count} pelanggan dimuat.`);
             } else {
                 showToast("Tidak ada data koordinat valid.");
             }
         }
 
-        // --- 5. Optimasi Sidebar (Pagination) ---
+        // --- 6. Optimasi Sidebar (Pagination) ---
         function updateCustomerListOptimized() {
             const container = document.getElementById('customerListContainer');
             const stats = document.getElementById('custTotal');
@@ -546,7 +705,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             const total = customersCache.length;
             stats.innerHTML = `<b>${total}</b>`;
 
-            // Render hanya 50 item pertama agar browser tidak crash
+            // Render hanya 50 item pertama
             const displayLimit = 50;
             const dataToShow = customersCache.slice(0, displayLimit);
 
@@ -592,7 +751,6 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             const container = document.getElementById('customerListContainer');
             container.innerHTML = '';
 
-            // Filter dari cache array
             const filtered = customersCache.filter(c => 
                 c.name.toUpperCase().includes(filter) || 
                 c.address.toUpperCase().includes(filter)
@@ -643,11 +801,12 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                 updateCustomerListOptimized();
                 document.getElementById('routeStatus').textContent = "Nonaktif";
                 document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#27ae60';
+                saveToLocalBrowser(); // Update local storage (kosong)
                 showToast("Data pelanggan direset.");
             }
         }
 
-        // --- 6. GeoJSON/KML Logic ---
+        // --- 7. GeoJSON/KML Logic ---
         function calculateGeometry(layer, type) {
             let resultText = "";
             const geoJSON = layer.toGeoJSON();
@@ -724,6 +883,7 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
                     });
                     if(layer.getLayers().length) map.fitBounds(layer.getBounds());
                     updateDrawStats();
+                    saveToLocalBrowser(); // Save gambar baru
                     showToast("File dimuat.");
                 } catch(err) { showToast("File tidak valid."); }
                 e.target.value = '';
@@ -731,26 +891,15 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             reader.readAsText(file);
         });
 
-        function exportGeoJSON() {
-            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data.");
-            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
-            const a = document.createElement('a');
-            a.setAttribute("href", data);
-            a.setAttribute("download", "peta_amerta.geojson");
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            showToast("File GeoJSON diunduh.");
-        }
-
         function clearDrawings() {
             if(confirm("Hapus semua gambar?")) {
                 drawnItems.clearLayers();
                 updateDrawStats();
+                saveToLocalBrowser();
             }
         }
 
-        // --- 7. UI Helpers ---
+        // --- 8. UI Helpers ---
         function switchTab(id) {
             document.querySelectorAll('.sidebar-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -769,6 +918,13 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             t.className = "show";
             setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
         }
+
+        function showSaveIndicator() {
+            const el = document.getElementById('saveIndicator');
+            el.style.display = 'inline';
+            el.style.opacity = '1';
+            setTimeout(() => { el.style.opacity = '0'; setTimeout(()=> el.style.display='none', 500); }, 2000);
+        }
         
         document.getElementById('toggleSidebar').addEventListener('click', () => {
             const sb = document.getElementById('sidebar');
@@ -779,8 +935,12 @@ jadikan csv bisa disimpan semua: <!DOCTYPE html>
             }
         });
 
-        updateDrawStats();
+        // --- 9. Startup Logic ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalBrowser();
+            updateDrawStats();
+        });
+
     </script>
 </body>
-
 </html>
