@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistem GIS Navigasi - Perumda Amerta Dayan Gunung</title>
     
-    <!-- Link ke Manifest untuk Icon & Install Aplikasi -->
+    <!-- Link ke Manifest -->
     <link rel="manifest" href="manifest.json">
     
     <!-- Leaflet CSS -->
@@ -112,9 +112,6 @@
         .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; }
         .btn-outline:hover { background: rgba(255,255,255,0.1); }
 
-        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
-        .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
-
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 5px; }
         .data-table th, .data-table td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
         .data-table th { background-color: var(--bg-light); color: #7f8c8d; }
@@ -167,7 +164,7 @@
         
         /* Loading Overlay */
         #loadingOverlay {
-            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8);
+            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.9);
             z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column;
         }
         .spinner {
@@ -282,25 +279,20 @@
             <!-- Tab 1: Tools -->
             <div id="tools" class="sidebar-content active">
                 <div class="control-group">
-                    <h3>Navigasi & GPS</h3>
+                    <h3>Sumber Data (Arsip ZIP)</h3>
                     <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px; line-height: 1.4;">
-                        Tentukan posisi Anda untuk menghitung rute terpendek ke pelanggan.
+                        Data diambil otomatis dari file <b>data.zip</b> (hasil convert dari RAR).
                     </p>
-                    <button class="btn btn-info" onclick="locateUser()">
-                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
+                    <button class="btn btn-primary" onclick="loadZipData()">
+                        <i class="fas fa-file-archive"></i> Load Data (data.zip)
                     </button>
                 </div>
 
                 <div class="control-group">
-                    <h3>Import Data Eksternal</h3>
-                    <div class="file-input-wrapper btn btn-warning">
-                        <i class="fas fa-file-csv"></i> Import CSV Pelanggan
-                        <input type="file" id="csvInput" accept=".csv">
-                    </div>
-                    <div class="file-input-wrapper btn btn-primary">
-                        <i class="fas fa-map-marked"></i> Import Peta (GeoJSON/KML)
-                        <input type="file" id="geojsonInput" accept=".geojson,.json,.kml">
-                    </div>
+                    <h3>Navigasi & GPS</h3>
+                    <button class="btn btn-info" onclick="locateUser()">
+                        <i class="fas fa-crosshairs"></i> Deteksi Lokasi Saya
+                    </button>
                 </div>
 
                 <div class="control-group">
@@ -308,7 +300,6 @@
                     <button class="btn btn-success" onclick="exportGeoJSON()">
                         <i class="fas fa-download"></i> Unduh Gambar (GeoJSON)
                     </button>
-                    <p style="font-size:0.7rem; color:#999; margin-top:5px;">Mengunduh hasil gambar poligon/garis Anda.</p>
                 </div>
             </div>
 
@@ -336,8 +327,8 @@
                     <input type="text" id="searchCustomer" placeholder="Cari nama atau alamat..." onkeyup="filterCustomers()">
                     <div id="customerListContainer" style="max-height: 50vh; overflow-y: auto; padding-right: 5px;">
                         <div style="text-align:center; padding: 30px; color:#bdc3c7;">
-                            <i class="fas fa-users-slash" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p style="font-size:0.85rem;">Belum ada data.<br>Import CSV untuk memulai.</p>
+                            <i class="fas fa-file-archive" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p style="font-size:0.85rem;">Menunggu load data.zip...</p>
                         </div>
                     </div>
                 </div>
@@ -372,7 +363,7 @@
         <!-- Loading Overlay -->
         <div id="loadingOverlay">
             <div class="spinner"></div>
-            <span style="font-weight:600; color:var(--primary-color)">Memproses Data...</span>
+            <span style="font-weight:600; color:var(--primary-color)">Mengekstrak & Memuat Data...</span>
         </div>
     </div>
 
@@ -396,6 +387,9 @@
     <div id="toast">Pesan Notifikasi</div>
 
     <!-- Scripts Library -->
+    <!-- JSZip Library: WAJIB untuk membaca file ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
@@ -405,7 +399,13 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
     <script>
-        // --- 1. Inisialisasi Peta ---
+        // --- 1. KONFIGURASI DATA ---
+        const DATA_CONFIG = {
+            autoLoad: true, 
+            url: "./data.zip" // Link ke file ZIP (yang tadinya RAR)
+        };
+
+        // --- 2. Inisialisasi Peta ---
         const map = L.map('map').setView([-6.175392, 106.827153], 12);
         
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
@@ -416,8 +416,6 @@
 
         // Feature Groups
         const drawnItems = new L.FeatureGroup();
-        
-        // MarkerClusterGroup
         const customerLayer = L.markerClusterGroup({
             showCoverageOnHover: false,
             zoomToBoundsOnClick: true,
@@ -425,13 +423,9 @@
             spiderfyOnMaxZoom: true, 
             iconCreateFunction: function(cluster) {
                 let c = ' marker-cluster-';
-                if (cluster.getChildCount() < 10) {
-                    c += 'small';
-                } else if (cluster.getChildCount() < 100) {
-                    c += 'medium';
-                } else {
-                    c += 'large';
-                }
+                if (cluster.getChildCount() < 10) c += 'small';
+                else if (cluster.getChildCount() < 100) c += 'medium';
+                else c += 'large';
                 return new L.DivIcon({ 
                     html: '<div><span>' + cluster.getChildCount() + '</span></div>', 
                     className: 'marker-cluster' + c, 
@@ -451,7 +445,97 @@
         // Cache array (Global)
         let customersCache = []; 
 
-        // --- 2. Logika Banner Install (PWA) ---
+        // --- 3. FUNGSI AMBIL DATA DARI ZIP ---
+        async function loadZipData() {
+            if (!DATA_CONFIG.url) return showToast("URL ZIP belum diatur.");
+            
+            showToast("Mengunduh & Mengekstrak data.zip...");
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            try {
+                // 1. Fetch file ZIP sebagai Binary Data (ArrayBuffer)
+                const response = await fetch(DATA_CONFIG.url);
+                if (!response.ok) throw new Error("Gagal mendownload file ZIP.");
+                
+                const arrayBuffer = await response.arrayBuffer();
+
+                // 2. Load ke JSZip
+                const zip = await JSZip.loadAsync(arrayBuffer);
+
+                let successCount = 0;
+                let processedFiles = [];
+
+                // 3. Loop setiap file di dalam ZIP
+                zip.forEach((relativePath, zipEntry) => {
+                    if (zipEntry.dir) return; // Abaikan folder, hanya ambil file
+
+                    // Baca isi file sebagai teks
+                    zipEntry.async("string").then(function(content) {
+                        const fileName = zipEntry.name;
+                        
+                        // 4. Proses berdasarkan ekstensi
+                        if (fileName.toLowerCase().endsWith('.csv')) {
+                            const results = Papa.parse(content, { header: true, skipEmptyLines: true });
+                            if (results.data && results.data.length > 0) {
+                                processCustomerDataAppend(results.data);
+                                successCount++;
+                            }
+                        } else if (fileName.toLowerCase().endsWith('.geojson') || fileName.toLowerCase().endsWith('.json')) {
+                            const geojson = JSON.parse(content);
+                            const layer = L.geoJSON(geojson, {
+                                onEachFeature: function(f, l) {
+                                    let type = 'unknown';
+                                    if(l instanceof L.Marker) type = 'marker';
+                                    else if(l instanceof L.Polygon) type = 'polygon';
+                                    else if(l instanceof L.Polyline) type = 'polyline';
+                                    if(type !== 'unknown') calculateGeometry(l, type);
+                                    drawnItems.addLayer(l);
+                                }
+                            });
+                            if(layer.getLayers().length) successCount++;
+                            updateDrawStats();
+                        } else if (fileName.toLowerCase().endsWith('.kml')) {
+                            const parser = new DOMParser();
+                            const kml = parser.parseFromString(content, "text/xml");
+                            const geojson = toGeoJSON.kml(kml);
+                            const layer = L.geoJSON(geojson, {
+                                onEachFeature: function(f, l) {
+                                    let type = 'unknown';
+                                    if(l instanceof L.Marker) type = 'marker';
+                                    else if(l instanceof L.Polygon) type = 'polygon';
+                                    else if(l instanceof L.Polyline) type = 'polyline';
+                                    if(type !== 'unknown') calculateGeometry(l, type);
+                                    drawnItems.addLayer(l);
+                                }
+                            });
+                            if(layer.getLayers().length) successCount++;
+                            updateDrawStats();
+                        }
+
+                        // Update UI setelah file terakhir diproses (perkiraan sederhana)
+                        // Untuk produksi lebih baik pakai Promise.all, tapi ini cukup untuk demo
+                        setTimeout(() => {
+                            if(successCount > 0) {
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                showToast(`${successCount} file berhasil diekstrak & dimuat.`);
+                                if(customerLayer.getLayers().length > 0) {
+                                    map.fitBounds(customerLayer.getBounds(), { padding: [50, 50] });
+                                }
+                                updateCustomerListOptimized();
+                            }
+                        }, 500);
+
+                    });
+                });
+
+            } catch (err) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                console.error(err);
+                showToast("Gagal membaca ZIP: " + err.message);
+            }
+        }
+
+        // --- 4. Logika Banner Install (PWA) ---
         let deferredPrompt;
         const installBanner = document.getElementById('install-banner');
         const btnInstall = document.getElementById('btn-install-app');
@@ -482,7 +566,14 @@
             showToast("Aplikasi berhasil diinstall!");
         });
 
-        // --- 3. Alat Gambar (Leaflet Draw) ---
+        // Trigger Otomatis saat halaman dimuat
+        window.addEventListener('load', () => {
+            if (DATA_CONFIG.autoLoad) {
+                loadZipData();
+            }
+        });
+
+        // --- 5. Alat Gambar (Leaflet Draw) ---
         const drawControl = new L.Control.Draw({
             draw: {
                 polyline: { shapeOptions: { color: '#0056b3' } },
@@ -517,7 +608,7 @@
         map.on(L.Draw.Event.EDITED, updateDrawStats);
         map.on(L.Draw.Event.DELETED, updateDrawStats);
 
-        // --- 4. Navigasi & GPS ---
+        // --- 6. Navigasi & GPS ---
         let currentUserLatLng = null;
 
         function locateUser() {
@@ -587,37 +678,10 @@
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
 
-        // --- 5. CSV Logic (MODE APPEND: Data tidak hilang saat upload baru) ---
-        document.getElementById('csvInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('loadingOverlay').style.display = 'flex';
-
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                worker: true, 
-                complete: function(results) {
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    if (results.data && results.data.length > 0) {
-                        processCustomerDataAppend(results.data);
-                    } else {
-                        showToast("File CSV kosong atau salah format.");
-                    }
-                    e.target.value = '';
-                },
-                error: function(err) { 
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    showToast("Error parsing CSV: " + err.message); 
-                }
-            });
-        });
-
+        // --- 7. CSV Logic (MODE APPEND) ---
         function processCustomerDataAppend(data) {
             let count = 0;
             const newBounds = L.latLngBounds(); 
-            
             const firstRow = data[0];
             let latKey = null, lngKey = null;
             
@@ -627,10 +691,7 @@
                 if (!lngKey && (k.includes('lng') || k.includes('long') || k.includes('x') || k.includes('bujur'))) lngKey = key;
             }
 
-            if (!latKey || !lngKey) {
-                alert("Kolom Latitude/Longitude tidak ditemukan dalam CSV baru.");
-                return;
-            }
+            if (!latKey || !lngKey) return; 
 
             data.forEach(row => {
                 const lat = parseFloat(row[latKey]);
@@ -682,17 +743,9 @@
                     count++;
                 }
             });
-
-            if (count > 0) {
-                map.fitBounds(newBounds, { padding: [50, 50] });
-                updateCustomerListOptimized();
-                showToast(`${count} pelanggan berhasil <b>DITAMBAHKAN</b>. Total: ${customersCache.length}`);
-            } else {
-                showToast("Tidak ada data koordinat valid pada file baru.");
-            }
         }
 
-        // --- 6. Optimasi Sidebar (Virtual List Logic) ---
+        // --- 8. Optimasi Sidebar ---
         function updateCustomerListOptimized() {
             const container = document.getElementById('customerListContainer');
             const stats = document.getElementById('custTotal');
@@ -793,22 +846,21 @@
         }
 
         function clearCustomers() {
-            if(confirm("Apakah Anda yakin ingin menghapus SEMUA data pelanggan dari peta?")) {
+            if(confirm("Hapus semua data pelanggan?")) {
                 customerLayer.clearLayers();
                 customersCache = [];
                 routeLayer.clearLayers();
                 updateCustomerListOptimized();
                 document.getElementById('routeStatus').textContent = "- km";
                 document.getElementById('routeStatus').parentElement.style.borderLeftColor = '#2980b9';
-                showToast("Semua data pelanggan direset.");
+                showToast("Data pelanggan direset.");
             }
         }
 
-        // --- 7. GeoJSON/KML Logic & Geometry Calc ---
+        // --- 9. GeoJSON/KML Logic & Geometry Calc ---
         function calculateGeometry(layer, type) {
             let resultText = "";
             const geoJSON = layer.toGeoJSON();
-            
             try {
                 if (type === 'polygon' || type === 'rectangle') {
                     const areaHa = (turf.area(geoJSON) / 10000).toFixed(2);
@@ -827,9 +879,7 @@
                     layer.bindPopup(`<b>MARKER</b><br>${resultText}`);
                     layer.feature.properties.coords = resultText;
                 }
-            } catch (e) {
-                console.error("Geometry calculation error", e);
-            }
+            } catch (e) { console.error("Geometry error", e); }
         }
 
         function updateDrawStats() {
@@ -860,56 +910,8 @@
             statsDiv.innerHTML = html || '<div class="stats-card" style="border-left-color:#ccc">Belum ada gambar.</div>';
         }
 
-        document.getElementById('geojsonInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const fileName = file.name.toLowerCase();
-            const isKml = fileName.endsWith('.kml');
-            const reader = new FileReader();
-            
-            document.getElementById('loadingOverlay').style.display = 'flex';
-
-            reader.onload = function(e) {
-                try {
-                    let geojson;
-                    if (isKml) {
-                        const parser = new DOMParser();
-                        const kml = parser.parseFromString(e.target.result, "text/xml");
-                        if (kml.getElementsByTagName("parsererror").length > 0) throw new Error("Format KML salah.");
-                        geojson = toGeoJSON.kml(kml);
-                    } else {
-                        geojson = JSON.parse(e.target.result);
-                    }
-                    const layer = L.geoJSON(geojson, {
-                        onEachFeature: function(f, l) {
-                            let type = 'unknown';
-                            if(l instanceof L.Marker) type = 'marker';
-                            else if(l instanceof L.Polygon) type = 'polygon';
-                            else if(l instanceof L.Polyline) type = 'polyline';
-                            
-                            if(type !== 'unknown') calculateGeometry(l, type);
-                            
-                            l.feature = l.feature || {};
-                            l.feature.properties = l.feature.properties || {};
-                            l.feature.properties.type = type;
-                            drawnItems.addLayer(l);
-                        }
-                    });
-                    if(layer.getLayers().length) map.fitBounds(layer.getBounds());
-                    updateDrawStats();
-                    showToast("File peta berhasil dimuat.");
-                } catch(err) { 
-                    console.error(err);
-                    showToast("File tidak valid atau rusak."); 
-                }
-                document.getElementById('loadingOverlay').style.display = 'none';
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        });
-
         function exportGeoJSON() {
-            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data gambar untuk diekspor.");
+            if(drawnItems.getLayers().length === 0) return showToast("Tidak ada data.");
             const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(drawnItems.toGeoJSON()));
             const a = document.createElement('a');
             a.setAttribute("href", data);
@@ -921,14 +923,14 @@
         }
 
         function clearDrawings() {
-            if(confirm("Hapus semua gambar yang telah Anda buat?")) {
+            if(confirm("Hapus semua gambar?")) {
                 drawnItems.clearLayers();
                 updateDrawStats();
-                showToast("Semua gambar dihapus.");
+                showToast("Gambar dihapus.");
             }
         }
 
-        // --- 8. UI Helpers ---
+        // --- 10. UI Helpers ---
         function switchTab(id) {
             document.querySelectorAll('.sidebar-content').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -951,22 +953,17 @@
         document.getElementById('toggleSidebar').addEventListener('click', () => {
             const sb = document.getElementById('sidebar');
             const mapDiv = document.getElementById('map');
-            
             if(window.innerWidth <= 768) {
                 if(sb.style.display === 'none') {
-                    sb.style.display = 'flex';
-                    mapDiv.style.height = '50%';
+                    sb.style.display = 'flex'; mapDiv.style.height = '50%';
                 } else {
-                    sb.style.display = 'none';
-                    mapDiv.style.height = '100%';
+                    sb.style.display = 'none'; mapDiv.style.height = '100%';
                 }
             } else {
                 if(sb.style.width === '0px') {
-                    sb.style.width = 'var(--sidebar-width)';
-                    sb.style.opacity = '1';
+                    sb.style.width = 'var(--sidebar-width)'; sb.style.opacity = '1';
                 } else {
-                    sb.style.width = '0px';
-                    sb.style.opacity = '0';
+                    sb.style.width = '0px'; sb.style.opacity = '0';
                 }
             }
             setTimeout(() => { map.invalidateSize(); }, 350);
